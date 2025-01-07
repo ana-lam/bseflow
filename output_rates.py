@@ -47,7 +47,7 @@ def output_results(file, save_path, CEE=False, Z=None, MT1mask=None, MT2mask=Non
 
         if MT1mask is None:
             rates_dict_wd, rates_df_wd = calculate_simulation_rates(file, formation_channel=None, formation_channel_2=None, optimistic_CE=True, selected_seeds=cleaned_seeds, white_dwarfs=True, additional_WD_factor=[WD_factor, WD_rate], CEE=CEE)
-            rates_dict, rates_df = calculate_simulation_rates(file, formation_channel=None, formation_channel_2=None, selected_seeds=cleaned_seeds, additional_WD_factor=[WD_factor, WD_rate], CEE=CEE)
+            rates_dict, rates_df = calculate_simulation_rates(file, formation_channel=None, formation_channel_2=None, optimistic_CE=True, selected_seeds=cleaned_seeds, additional_WD_factor=[WD_factor, WD_rate], CEE=CEE)
         elif MT2mask is None:
             rates_dict, rates_df = calculate_simulation_rates(file, formation_channel=masks[MT1mask], formation_channel_2=None, optimistic_CE=True, selected_seeds=cleaned_seeds, additional_WD_factor=[WD_factor, WD_rate])
         else:

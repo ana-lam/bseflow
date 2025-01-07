@@ -514,7 +514,7 @@ def calculate_simulation_rates(file, CEE=False, white_dwarfs=False, PISN=False, 
                                                             (post_sn_mask==1),
                                                 addtnl_ce_seeds = ce_seeds[(post_sn_ce_mask==1) & (optimistic_CE_pre_sn_CE_mask==0)] if optimistic_CE is False else
                                                 ce_seeds[(post_sn_ce_mask==1)],
-                                                rel_rate=[rates_dict['MT1_SN1'],rates_dict['ZAMS_SN1']] if formation_channel is None else rates_dict['SN1_Survive1'],
+                                                rel_rate=rates_dict['SN1_Survive1'],
                                                 formation_channel=fc_seeds_2,
                                                 CEE=CE_post_SN_seeds,
                                                 WD_mask=WD_mask)
@@ -572,7 +572,7 @@ def calculate_simulation_rates(file, CEE=False, white_dwarfs=False, PISN=False, 
     rates_dict['SN1_SN2'] = calculate_rate(sn_seeds, sys_seeds, weights, total_weight, metallicity1, unique_Z, totalMass,
                                             condition = (((SN_SN2_mask==1)& (SN_noRLOF_mask==1)) | (SN_SN1_SN2_mask==1)) & (optimistic_CE_pre_sn_SN_mask==0) if optimistic_CE is False else
                                                         (((SN_SN2_mask==1)& (SN_noRLOF_mask==1)) | (SN_SN1_SN2_mask==1)),
-                                            rel_rate=[rates_dict['MT1_SN1'],rates_dict['ZAMS_SN1']] if formation_channel is None else rates_dict['SN1_Survive1'],
+                                            rel_rate=rates_dict['SN1_Survive1'],
                                             formation_channel=fc_seeds)
     
     rates_dict['MT2_SN2'] = calculate_rate(rlof_seeds, sys_seeds, weights, total_weight, metallicity1, unique_Z, totalMass,

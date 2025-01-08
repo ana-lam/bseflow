@@ -68,13 +68,19 @@ def clean_buggy_systems(file, selected_seeds=None):
 
     return sys_seeds[sys_mask], WD_factor, WD_rate
 
-def specify_metallicity(Z, file, selected_seeds=None):
+def specify_metallicity(file, Z, Z_max=None, selected_seeds=None):
 
     files_and_fields = [
     (file, 'systems', ['Metallicity1'], {})
     ]
 
-    (sys_seeds, stellar_merger, disbound, weight) = multiprocess_files(files_and_fields, selected_seeds=selected_seeds)
+    (sys_seeds, metallicity1) = multiprocess_files(files_and_fields, selected_seeds=selected_seeds)
+
+    if Z_max:
+        Z_mask = ((metallicity1>=Z) & (metallicity1<Z_max))
+    else:
+        Z_mask = (metallicity1==Z)
+    Z_seeds = selected_seeds[Z_mask]
 
     return Z_seeds
 
@@ -157,8 +163,8 @@ def calculate_rate(data, systems, weights, total_weight, metallicities, unique_Z
     # if formation_channel is not None:
     #     mask &= formation_channel
 
-    ce_seeds, smt_seeds, ce_rate, smt_rate, ce_rel_rate, smt_rel_rate = None, None, None, None, None, None
-    ce_rate_per_mass, smt_rate_per_mass, ce_rates_per_mass, smt_rates_per_mass = None, None, None, None
+    ce_seeds, smt_seeds, ce_rate, smt_rate, ce_rel_rate, smt_rel_rate = np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+    ce_rate_per_mass, smt_rate_per_mass, ce_rates_per_mass, smt_rates_per_mass = np.nan, np.nan, np.nan, np.nan
     
     if CEE is not None:
         ce_seeds, ce_total_count, ce_rate, ce_rel_rate = compute_rate(mask & (in1d(data, CEE)), total_weight,  fc=formation_channel, addtnl_ce_seeds=addtnl_ce_seeds[in1d(addtnl_ce_seeds, CEE)] if addtnl_ce_seeds is not None else addtnl_ce_seeds, rel_rate=rel_rate)
@@ -176,8 +182,8 @@ def calculate_rate(data, systems, weights, total_weight, metallicities, unique_Z
         'rel_rate': rel_rate, 
         'cee_rate': [ce_rate, smt_rate],
         'cee_rel_rate': [ce_rel_rate, smt_rel_rate],
-        'ce_seeds': ce_seeds.astype(int) if ce_seeds is not None else ce_seeds,
-        'smt_seeds': smt_seeds.astype(int) if smt_seeds is not None else smt_seeds,
+        'ce_seeds': ce_seeds.astype(int) if ce_seeds is not np.nan else ce_seeds,
+        'smt_seeds': smt_seeds.astype(int) if smt_seeds is not np.nan else smt_seeds,
         'rate_per_mass' : rate_per_mass,
         'rates_per_mass' : rates_per_mass,
         'cee_rate_per_mass' : [ce_rate_per_mass, smt_rate_per_mass],
@@ -267,26 +273,11 @@ def calculate_simulation_rates(file, CEE=False, white_dwarfs=False, PISN=False, 
     WD_SN_seeds = sn_seeds[((previousStellarTypeSN>9) & (previousStellarTypeSN<13)) | ((previousStellarTypeCompanion>9) & (previousStellarTypeCompanion<13))]
     pre_sn_mask, post_sn_mask, invalid_rlof_mask, pre_sn_ce_mask, post_sn_ce_mask = mask_mass_transfer_episodes(file, selected_seeds=selected_seeds)
     RLOF_mask = in1d(sys_seeds, rlof_seeds[~invalid_rlof_mask])
-    # RLOF_SN_mask = in1d(rlof_seeds, sn_seeds)
-    # merger_RLOF_seeds = sys_seeds[(RLOF_mask) & (stellar_merger==1)]
-    # merger_RLOF_mask = in1d(rlof_seeds, merger_RLOF_seeds)
-    # MT1_WD_seeds = rlof_seeds[( (pre_sn_mask==1) & (merger_RLOF_mask==0) & (RLOF_SN_mask==0) & 
-    #                         ( ( ( ( (type1 > 9 ) & (type1 < 13) ) | ( (type2 > 9 ) & (type2 < 13) ) )
-    #                         | ( ( (type1Prev > 9 ) & (type1Prev < 13) ) | ( (type2Prev > 9 ) & (type2Prev < 13) ) ) ) ) | 
-    #                         ( (pre_sn_mask==1) & (merger_RLOF_mask==0) & (RLOF_SN_mask==0)) )]
-    # MT2_WD_seeds = rlof_seeds[( (post_sn_mask==1) & (merger_RLOF_mask==0) &
-    #                         ( ( ( (type1 > 9 ) & (type1 < 13) ) | ( (type2 > 9 ) & (type2 < 13) ) )
-    #                         | ( ( (type1Prev > 9 ) & (type1Prev < 13) ) | ( (type2Prev > 9 ) & (type2Prev < 13) ) ) ) | 
-    #                         ((post_sn_mask==1) & (RLOFmass2<1)) )]
     RLOF_WD_seeds = rlof_seeds[ ( ( ( (type1 > 9 ) & (type1 < 13) ) | ( (type2 > 9 ) & (type2 < 13) ) )
                             | ( ( (type1Prev > 9 ) & (type1Prev < 13) ) | ( (type2Prev > 9 ) & (type2Prev < 13) ) ) )]
     
     # let's discard white dwarfs (& stellar type 15 systems)
     k_type = f_seeds[ ( (stellar_type_K1>9) & (stellar_type_K1<13) ) | ( (stellar_type_K2>9) & (stellar_type_K2<13) )]
-    # totalZAMSmass = ZAMSmass1 + ZAMSmass2
-    # white_dwarf_seeds = np.concatenate((rlof_seeds[ ( ( ( (type1>9 ) & (type1<13) ) | ( (type2>9 ) & (type2<13) ) )
-    #                                         | ( ( (type1Prev>9 ) & (type1Prev<13) ) | ( (type2Prev>9 ) & (type2Prev<13) ) ) )],
-    #                                     sys_seeds[(ZAMSmass1<8)], MT1_WD_seeds, WD_SN_seeds, MT2_WD_seeds, k_type))
     white_dwarf_seeds = np.concatenate((RLOF_WD_seeds, WD_SN_seeds, k_type))
 
     white_dwarf_seeds = white_dwarf_seeds[~in1d(white_dwarf_seeds, dco_seeds)]

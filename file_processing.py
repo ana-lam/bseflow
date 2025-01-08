@@ -137,6 +137,7 @@ def sort_model_files(model_files):
     
     return [model_sort[key] for key in sorted(model_sort)]
 
+
 def create_compact_h5(file, output_file, selected_seeds):
     
     with h5.File(file, 'r') as fdata:
@@ -168,3 +169,19 @@ def create_compact_h5(file, output_file, selected_seeds):
                     f_out[group_name].create_dataset(dataset_name, data=filtered_data)
 
     print("Filtered H5 file created successfully.")
+
+
+def create_h5_file(file, data):
+    
+    with h5.File(file, 'w') as hdf:
+        for key, value in data.items():
+            group = hdf.create_group(key)
+
+            for sub_key, sub_value in value.items():
+                if isinstance(sub_value, np.ndarray):
+                    group.create_dataset(sub_key, data=sub_value)
+                elif isinstance(sub_value, list):
+                    group.create_dataset(sub_key, data=np.array(sub_value))
+                else:
+                    group.attrs[sub_key] = sub_value
+    print(f'HDF5 file {file} created successfully.')

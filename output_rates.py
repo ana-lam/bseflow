@@ -2,21 +2,23 @@
 
 import argparse
 import os
-import gzip
-import json
-import pandas as pd
-from calculate_rates import calculate_simulation_rates, clean_buggy_systems
+from calculate_rates import calculate_simulation_rates, clean_buggy_systems, specify_metallicity
 from formation_channels import identify_formation_channels
 import h5py as h5
 import numpy as np
+from file_processing import create_h5_file
 
-def output_results(file, save_path, CEE=False, Z=None, MT1mask=None, MT2mask=None, selected_seeds=None):
+
+def output_results(file, save_path, CEE=False, Z=None, Z_max=None, MT1mask=None, MT2mask=None, selected_seeds=None, write_seeds=None):
 
     print("starting...")
 
     model = file.split("/")[-2] # record model from file path name
 
-    cleaned_seeds, WD_factor, WD_rate = clean_buggy_systems(file, selected_seeds=None)
+    cleaned_seeds, WD_factor, WD_rate = clean_buggy_systems(file, selected_seeds=selected_seeds)
+
+    if Z:
+        cleaned_seeds = specify_metallicity(file, Z, Z_max=Z_max, selected_seeds=cleaned_seeds)
 
     print("calculating channels...")
     if MT1mask is not None:
@@ -25,15 +27,25 @@ def output_results(file, save_path, CEE=False, Z=None, MT1mask=None, MT2mask=Non
     print("calculating rates...")
 
     if MT1mask is None:
-        rates_dict_wd, rates_df_wd = calculate_simulation_rates(file, formation_channel=None, formation_channel_2=None, selected_seeds=cleaned_seeds, white_dwarfs=True, additional_WD_factor=[WD_factor, WD_rate], CEE=CEE)
-        rates_dict, rates_df = calculate_simulation_rates(file, formation_channel=None, formation_channel_2=None, selected_seeds=cleaned_seeds, additional_WD_factor=[WD_factor, WD_rate], CEE=CEE)
+        rates_dict_wd, rates_df_wd = calculate_simulation_rates(file, formation_channel=None, formation_channel_2=None, 
+                                                                selected_seeds=cleaned_seeds, white_dwarfs=True, 
+                                                                additional_WD_factor=[WD_factor, WD_rate], CEE=CEE)
+        rates_dict, rates_df = calculate_simulation_rates(file, formation_channel=None, formation_channel_2=None, 
+                                                          selected_seeds=cleaned_seeds, additional_WD_factor=[WD_factor, WD_rate], 
+                                                          CEE=CEE)
     elif MT2mask is None:
-        rates_dict, rates_df = calculate_simulation_rates(file, formation_channel=masks[MT1mask], formation_channel_2=None, selected_seeds=cleaned_seeds, additional_WD_factor=[WD_factor, WD_rate])
+        rates_dict, rates_df = calculate_simulation_rates(file, formation_channel=masks[MT1mask], formation_channel_2=None, 
+                                                          selected_seeds=cleaned_seeds, additional_WD_factor=[WD_factor, WD_rate])
     else:
-        rates_dict, rates_df = calculate_simulation_rates(file, formation_channel=masks[MT1mask], formation_channel_2=(masks[MT1mask] & masks[MT2mask]), selected_seeds=cleaned_seeds, additional_WD_factor=[WD_factor, WD_rate])
+        rates_dict, rates_df = calculate_simulation_rates(file, formation_channel=masks[MT1mask], 
+                                                          formation_channel_2=(masks[MT1mask] & masks[MT2mask]), 
+                                                          selected_seeds=cleaned_seeds, additional_WD_factor=[WD_factor, WD_rate])
 
     print("writing csv...")
     rates_df.to_csv(f'../data/rates_{model}_{save_path}.csv')
+    if write_seeds:
+        create_h5_file(f'../data/fc_stage_seeds/{write_seeds}_{model}.h5')
+
     if 'rates_df_wd' in locals() and not rates_df_wd.empty and rates_df_wd.values.any():
         rates_df_wd.to_csv(f'../data/rates_{model}_{save_path}_WD.csv')
 
@@ -46,26 +58,41 @@ def output_results(file, save_path, CEE=False, Z=None, MT1mask=None, MT2mask=Non
         print("calculating rates...")
 
         if MT1mask is None:
-            rates_dict_wd, rates_df_wd = calculate_simulation_rates(file, formation_channel=None, formation_channel_2=None, optimistic_CE=True, selected_seeds=cleaned_seeds, white_dwarfs=True, additional_WD_factor=[WD_factor, WD_rate], CEE=CEE)
-            rates_dict, rates_df = calculate_simulation_rates(file, formation_channel=None, formation_channel_2=None, optimistic_CE=True, selected_seeds=cleaned_seeds, additional_WD_factor=[WD_factor, WD_rate], CEE=CEE)
+            rates_dict_wd, rates_df_wd = calculate_simulation_rates(file, formation_channel=None, formation_channel_2=None, 
+                                                                    optimistic_CE=True, selected_seeds=cleaned_seeds, white_dwarfs=True, 
+                                                                    additional_WD_factor=[WD_factor, WD_rate], CEE=CEE)
+            rates_dict, rates_df = calculate_simulation_rates(file, formation_channel=None, formation_channel_2=None, 
+                                                              optimistic_CE=True, selected_seeds=cleaned_seeds, 
+                                                              additional_WD_factor=[WD_factor, WD_rate], CEE=CEE)
         elif MT2mask is None:
-            rates_dict, rates_df = calculate_simulation_rates(file, formation_channel=masks[MT1mask], formation_channel_2=None, optimistic_CE=True, selected_seeds=cleaned_seeds, additional_WD_factor=[WD_factor, WD_rate])
+            rates_dict, rates_df = calculate_simulation_rates(file, formation_channel=masks[MT1mask], formation_channel_2=None, 
+                                                              optimistic_CE=True, selected_seeds=cleaned_seeds, 
+                                                              additional_WD_factor=[WD_factor, WD_rate])
         else:
-            rates_dict, rates_df = calculate_simulation_rates(file, formation_channel=masks[MT1mask], formation_channel_2=(masks[MT1mask] & masks[MT2mask]), optimistic_CE=True, selected_seeds=cleaned_seeds, additional_WD_factor=[WD_factor, WD_rate])
+            rates_dict, rates_df = calculate_simulation_rates(file, formation_channel=masks[MT1mask], 
+                                                              formation_channel_2=(masks[MT1mask] & masks[MT2mask]), 
+                                                              optimistic_CE=True, selected_seeds=cleaned_seeds, 
+                                                              additional_WD_factor=[WD_factor, WD_rate])
 
         if model == 'fiducial':
             rates_df.to_csv(f'../data/rates_optimisticCE_{save_path}.csv')
+            if write_seeds:
+                create_h5_file(f'../data/fc_stage_seeds/{write_seeds}_optimisticCE.h5')
+
             if 'rates_df_wd' in locals() and not rates_df_wd.empty and rates_df_wd.values.any():
                 rates_df_wd.to_csv(f'../data/rates_optimisticCE_{save_path}_WD.csv')
 
         elif model == 'unstableCaseBB':
             rates_df.to_csv(f'../data/rates_unstableCaseBB_opt_{save_path}.csv')
+            if write_seeds:
+                create_h5_file(f'../data/fc_stage_seeds/{write_seeds}_unstableCaseBB_opt.h5')
+
             if 'rates_df_wd' in locals() and not rates_df_wd.empty and rates_df_wd.values.any():
                 rates_df_wd.to_csv(f'../data/rates_unstableCaseBB_opt_{save_path}_WD.csv')
 
-def main(file, save_path, CEE, Z, MT1mask, MT2mask):
+def main(file, save_path, CEE, Z, Z_max, MT1mask, MT2mask, selected_seeds=None, write_seeds=None):
 
-    output_results(file, save_path, CEE, Z, MT1mask, MT2mask)
+    output_results(file, save_path, CEE, Z, Z_max, MT1mask, MT2mask, selected_seeds=selected_seeds, write_seeds=write_seeds)
 
     print("done!")
 
@@ -76,9 +103,12 @@ if __name__ == "__main__":
     parser.add_argument('file', type=str, help="File path.")
     parser.add_argument('--save_path', required=True, type=str, help='Path to save.')
     parser.add_argument('--CEE', action='store_true', help='Calculate rates with CEE.')
-    parser.add_argument('--Z', type=float, default=None, help='Calculate for specific metallicity')
+    parser.add_argument('--Z', type=float, default=None, help='Calculate for specific metallicity.')
+    parser.add_argument('--Z_max', type=float, default=None, help='Calculate for specific metallicity range.')
     parser.add_argument('--MT1mask', type=str, default=None, help='Mask for the first MT.')
     parser.add_argument('--MT2mask', type=str, default=None, help='Mask for the second MT.')
+    parser.add_argument('--selected_seeds', type=list, default=None, help='Specific seeds for processing.')
+    parser.add_argument('--write_seeds', type=str, default=None, help='Write seeds to h5 file.')
     
     args = parser.parse_args()
-    main(args.file, args.save_path, args.CEE, args.Z, args.MT1mask, args.MT2mask)
+    main(args.file, args.save_path, args.CEE, args.Z, args.Z_max, args.MT1mask, args.MT2mask, args.selected_seeds, args.write_seeds)

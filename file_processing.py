@@ -7,6 +7,7 @@ import fnmatch
 import re
 import json
 from utils import in1d
+from data_dicts.model_variations import model_variations
 
 def find_particular_files(directory, filename_pattern):
     """
@@ -123,17 +124,29 @@ def grab_h5_data(file_path, group, return_df=False, fields = [], selected_seeds=
     return data
 
 
-def sort_model_files(model_files):
+def sort_model_files(model_files, rates_specific=False):
     
     # rewrite this later to sort model files with any file path
-    with open('bseFlow/data_dicts/modelVariations.json') as f:
-        variations = json.load(f)
+
+    model_substrings = ['alpha0_1', 'alpha0_5', 'alpha10', 'alpha2_0', 'ccSNkick_100km_s',
+                        'ccSNkick_30km_s', 'fiducial', 'massTransferEfficiencyFixed_0_25', 
+                        'massTransferEfficiencyFixed_0_5', 'massTransferEfficiencyFixed_0_75',
+                        'maxNSmass2_0', 'maxNSmass3_0', 'noBHkick', 'noPISN', 'optimisticCE',
+                        'rapid', 'unstableCaseBB', 'unstableCaseBB_opt', 'wolf_rayet_multiplier_0_1',
+                        'wolf_rayet_multiplier_5']
 
     model_sort = {}
-    for path in model_files:
-        model_name = re.sub(r'^rates_|_[^_]+$', '', path.split("/")[-1])
-        if model_name in variations:
-            model_sort[variations[model_name]['short']] = path
+
+    if rates_specific:
+        for path in model_files:
+            model_name = [sub for sub in model_substrings if sub in path][0]
+            # model_name = re.sub(r'^rates_|_[^_]+$', '', path.split("/")[-1])
+            if model_name in model_variations:
+                model_sort[model_variations[model_name]['short']] = path
+    else:
+        for model_name in model_files:
+            if model_name in model_variations:
+                model_sort[model_variations[model_name]['short']] = model_name
     
     return [model_sort[key] for key in sorted(model_sort)]
 

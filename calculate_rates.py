@@ -84,6 +84,44 @@ def specify_metallicity(file, Z, Z_max=None, selected_seeds=None):
 
     return Z_seeds
 
+def specify_metallicity(file, Z, Z_max=None, selected_seeds=None):
+
+    files_and_fields = [
+    (file, 'systems', ['Metallicity1'], {})
+    ]
+
+    (sys_seeds, metallicity1) = multiprocess_files(files_and_fields, selected_seeds=selected_seeds)
+
+    if Z_max:
+        Z_mask = ((metallicity1>=Z) & (metallicity1<Z_max))
+    else:
+        Z_mask = (metallicity1==Z)
+    Z_seeds = selected_seeds[Z_mask]
+
+    return Z_seeds
+
+def specify_masses(file, m_min=None, m_max=None, selected_seeds=None):
+
+    files_and_fields = [
+        (file, 'systems', ['mass1'], {})
+    ]
+
+    (sys_seeds, mass1) = multiprocess_files(files_and_fields, selected_seeds=selected_seeds)
+
+    if m_max and m_min:
+        mass_mask = ((mass1>=m_min) & (mass1<m_max))
+    elif m_max:
+        mass_mask = (mass1<m_max)
+    elif m_min:
+        mass_mask = (mass1>=m_min)
+    else:
+        mass_mask = None
+
+    if mass_mask is not None:
+        mass_seeds = selected_seeds[mass_mask]
+    
+    return mass_seeds
+
 
 def calculate_rate(data, systems, weights, total_weight, metallicities, unique_Z, total_mass, 
                    CEE=None, condition=None, addtnl_ce_seeds = None, rel_rate=None, formation_channel=None, WD_mask=None):
@@ -114,14 +152,21 @@ def calculate_rate(data, systems, weights, total_weight, metallicities, unique_Z
     
     # standard rate
     def compute_rate(mask, total_weight, fc=None, addtnl_ce_seeds=None, rel_rate=None, WD_mask=None):
-        
+        """Computes standard rate and relative rate."""
         masked_data = data[mask]
+
+        # combine additional CE seeds
         if addtnl_ce_seeds is not None:
             masked_data = np.concatenate((masked_data, addtnl_ce_seeds))
+        
+        # filter by formation channel
         if fc is not None:
             masked_data = masked_data[in1d(masked_data, fc)] 
+        
+        # remove WD systems
         if WD_mask is not None:
             masked_data = masked_data[~in1d(masked_data, WD_mask)]
+
         mask = in1d(systems, masked_data)
         total_count = np.sum(weights[mask])
         rate = total_count / total_weight
@@ -131,37 +176,20 @@ def calculate_rate(data, systems, weights, total_weight, metallicities, unique_Z
             rel_rate = total_count / np.sum(weights[in1d(systems, rel_rate_seeds)])
         else:
             rel_rate = rate
+        
         return systems[mask], total_count, rate, rel_rate
     
     # astrophysical rate
     def compute_rates_per_mass(seeds):
-
+        """Computes rate per total and per metallicity mass."""
         seed_mask = in1d(systems, seeds)
         formation_rate = np.divide(np.sum(weights[seed_mask]), total_mass)
-        
         formation_rates = np.array([np.sum(weights[seed_mask & (metallicities == Z)]) for Z in unique_Z])
-
-        # formation_rates = np.zeros(len(unique_Z))
-
-        # seed_metallicities = metallicities[seed_mask]
-        # seed_weights = weights[seed_mask]
-        
-        # for index, Z in enumerate(unique_Z):
-        #     if Z in seed_metallicities:
-        #         maskZ = (seed_metallicities==Z)
-        #         formation_rates[index] = np.sum(seed_weights[maskZ])
-        #     else:
-        #         formation_rates[index] = 0
-        
-        # formation_rates = None
-        ## formation rates per metallicities
         formation_rates = np.divide(formation_rates, total_mass)
         
         return formation_rate, formation_rates
     
     mask = condition if condition is not None else np.ones_like(data, dtype=bool)
-    # if formation_channel is not None:
-    #     mask &= formation_channel
 
     ce_seeds, smt_seeds, ce_rate, smt_rate, ce_rel_rate, smt_rel_rate = np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
     ce_rate_per_mass, smt_rate_per_mass, ce_rates_per_mass, smt_rates_per_mass = np.nan, np.nan, np.nan, np.nan

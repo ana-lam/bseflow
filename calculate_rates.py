@@ -84,21 +84,6 @@ def specify_metallicity(file, Z, Z_max=None, selected_seeds=None):
 
     return Z_seeds
 
-def specify_metallicity(file, Z, Z_max=None, selected_seeds=None):
-
-    files_and_fields = [
-    (file, 'systems', ['Metallicity1'], {})
-    ]
-
-    (sys_seeds, metallicity1) = multiprocess_files(files_and_fields, selected_seeds=selected_seeds)
-
-    if Z_max:
-        Z_mask = ((metallicity1>=Z) & (metallicity1<Z_max))
-    else:
-        Z_mask = (metallicity1==Z)
-    Z_seeds = selected_seeds[Z_mask]
-
-    return Z_seeds
 
 def specify_masses(file, m_min=None, m_max=None, selected_seeds=None):
 
@@ -121,6 +106,38 @@ def specify_masses(file, m_min=None, m_max=None, selected_seeds=None):
         mass_seeds = selected_seeds[mass_mask]
     
     return mass_seeds
+
+
+def filter_by_property(file, group, prop, min_val=None, max_val=None, selected_seeds=None):
+
+    if prop == 'q_i':
+        files_and_fields = [
+        (file, 'systems', ['mass1', 'mass2'], {})
+        ]
+
+        (sys_seeds, mass1, mass2) = multiprocess_files(files_and_fields, selected_seeds=selected_seeds)
+        prop = mass2/mass1
+
+    else:
+        files_and_fields = [
+            (file, f'{group}', [f'{prop}'], {})
+        ]
+
+        (sys_seeds, prop) = multiprocess_files(files_and_fields, selected_seeds=selected_seeds)
+
+    if max_val is not None and min_val is not None:
+        prop_mask = ((prop>=min_val) & (prop<max_val))
+    elif max_val is not None:
+        prop_mask = (prop<max_val)
+    elif min_val is not None:
+        prop_mask = (prop>=min_val)
+    else:
+        prop_mask = None
+
+    if prop_mask is not None:
+        prop_seeds = sys_seeds[prop_mask]
+
+    return prop_seeds
 
 
 def calculate_rate(data, systems, weights, total_weight, metallicities, unique_Z, total_mass, 
@@ -436,9 +453,10 @@ def calculate_simulation_rates(file, CEE=False, white_dwarfs=False, PISN=False, 
     
     if fc_seeds is not None:
         mt_other_mask = ~in1d(rlof_seeds, rates_dict['ZAMS_MT1']['seeds'])
+        mt_other_ce_mask = ~in1d(ce_seeds, rates_dict['ZAMS_MT1']['seeds'])
         rates_dict['ZAMS_MT1other'] = calculate_rate(rlof_seeds, sys_seeds, weights, total_weight, metallicity1, unique_Z, totalMass,
                                                 condition = ((pre_sn_mask == 1) & (mt_other_mask==1)),
-                                                addtnl_ce_seeds=ce_seeds[(pre_sn_ce_mask==1) & (in1d(ce_seeds, rlof_seeds))], 
+                                                addtnl_ce_seeds=ce_seeds[(pre_sn_ce_mask==1) & (mt_other_ce_mask==1) & (in1d(ce_seeds, rlof_seeds))], 
                                                 CEE=CE_pre_SN_seeds,
                                                 WD_mask=WD_mask)
     

@@ -139,7 +139,10 @@ def sort_model_files(model_files, rates_specific=False):
 
     if rates_specific:
         for path in model_files:
-            model_name = [sub for sub in model_substrings if sub in path][0]
+            if "unstableCaseBB_opt" in path:
+                model_name = "unstableCaseBB_opt"
+            else:
+                model_name = [sub for sub in model_substrings if sub in path][0]
             # model_name = re.sub(r'^rates_|_[^_]+$', '', path.split("/")[-1])
             if model_name in model_variations:
                 model_sort[model_variations[model_name]['short']] = path

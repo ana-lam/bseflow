@@ -1,0 +1,84 @@
+{
+    "channels": {
+        "0": {
+            "name": "other",
+            "channel": "channel V",
+            "plotting": {
+                "color": "gray",
+                "layoutText": "(V) Other"
+            }
+        },
+        "1": {
+            "name": "classic",
+            "channel": "channel I",
+            "plotting": {
+                "color": "#118AB2",
+                "layoutText": "(I) Classic"
+            }
+        },
+        "2": {
+            "name": "stable B no CEE",
+            "channel": "channel II",
+            "plotting": {
+                "color": "orange",
+                "layoutText": "(II) Only stable mass transfer (OSMT)"
+            }
+        },
+        "3": {
+            "name": "immediate CE",
+            "channel": "channel III",
+            "plotting": {
+                "color": "#EF476F",
+                "layoutText": "(III) Single-core CE as first mass transfer"
+            }
+        },
+        "4": {
+            "name": "double-core CE",
+            "channel": "channel IV",
+            "plotting": {
+                "color": "#073B4C",
+                "layoutText": "(IV) Double-core CE as first mass transfer"
+            }
+        },
+        "5": {
+            "name": "vi",
+            "channel": "channel VI",
+            "plotting": {
+                "color": "cyan",
+                "layoutText": "\\(Ib) Classic Case A"
+            }
+        },
+        "6": {
+            "name": "vii",
+            "channel": "channel VII",
+            "plotting": {
+                "color": "#FFD166",
+                "layoutText": "(IIb) Only stable mass transfer (OSMT)"
+            }
+        },
+        "7": {
+            "name": "viii",
+            "channel": "channel VIII",
+            "plotting": {
+                "color": "#FFD166",
+                "layoutText": "(V) No mass transfer"
+            }
+        },
+        "8": {
+            "name": "",
+            "channel": "",
+            "plotting": {
+                "color": "#FFD166",
+                "layoutText": "CE as first mass transfer"
+            }
+        },
+        "9": {
+            "name": "",
+            "channel": "",
+            "plotting": {
+                "color": "#FFD166",
+                "layoutText": "SMT as first mass transfer"
+            }
+        }
+    }
+}

@@ -1,0 +1,50 @@
+{
+    "f_initial": {
+        "name": "$f_{\\rm initial}$",
+        "bold_name": "$\\mathbf{f_{\\rm \\mathbf{initial}}}$",
+        "no_tex_name": "f_initial",
+        "color": "#00FFFFFF"  
+    },
+    "ZAMS_MT1": {
+        "name": "$f_{\\rm MT1}$",
+        "bold_name": "$\\mathbf{f_{\\rm \\mathbf{MT1}}}$",
+        "no_tex_name": "f_MT1",
+        "color": "#d98200"  
+    },
+    "MT1_SN1": {
+        "name": "$f_{\\rm MT1~survive}$",
+        "bold_name": "$\\mathbf{f_{\\rm \\mathbf{MT1\\ survive}}}$",
+        "no_tex_name": "f_MT1survive",
+        "color": "#4a95d2" 
+    },
+    "SN1_Survive1": {
+        "name": "$f_{\\rm SN1~survive}$",
+        "bold_name": "$\\mathbf{f_{\\rm \\mathbf{SN1\\ survive}}}$",
+        "no_tex_name": "f_SN1survive",
+        "color": "#008060"  
+},
+    "SN1_MT2": {
+        "name": "$f_{\\rm MT2}$",
+        "bold_name": "$\\mathbf{f_{\\rm \\mathbf{MT2}}}$",
+        "no_tex_name": "f_MT2",
+        "color": "#a5911c"  
+    },
+    "MT2_SN2": {
+        "name": "$f_{\\rm MT2~survive}$",
+        "bold_name": "$\\mathbf{f_{\\rm \\mathbf{MT2\\ survive}}}$",
+        "no_tex_name": "f_MT2survive",
+        "color": "#005c99"  
+    },
+    "SN2_Survive2": {
+        "name": "$f_{\\rm SN2~survive}$",
+        "bold_name": "$\\mathbf{f_{\\rm \\mathbf{SN2\\ survive}}}$",
+        "no_tex_name": "f_SN2survive",
+        "color": "#b14e00"  
+    },
+    "DCO_Merges": {
+        "name": "$f_{\\rm merge_{\\rm t<Hubble}}$",
+        "bold_name": "$\\mathbf{f_{\\rm \\mathbf{merge}}}_{\\rm \\mathbf{t<Hubble}}$",
+        "no_tex_name": "f_merges(t<Hubble)",
+        "color": "#a44276"  
+    }
+}

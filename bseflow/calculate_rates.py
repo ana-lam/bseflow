@@ -8,8 +8,10 @@ import h5py
 import os
 
 class BSESimulation:
-    """BSESimulation: Calculate stellar evolution intermediate stage rates 
-    from COMPAS HDF5 outputs."""
+    """
+    BSESimulation: Calculate stellar evolution intermediate stage rates 
+    from COMPAS HDF5 outputs.
+    """
 
     def __init__(self, filepath, selected_seeds=None, weights=None, CEE=False,
                  include_wds=False, include_pisn=False, optimistic_CE=False,

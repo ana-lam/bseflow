@@ -102,6 +102,7 @@ class BSESimulation:
     def get_fields(self, group, *fields):
         """
         Helper function to easily call data from self.all_data.
+
         Args:
             - group: which group in HDF5 ('systems', 'RLOF', 'supernovae', etc)
             - fields: field names to extract
@@ -188,6 +189,7 @@ class BSESimulation:
 
         """
         Filter systems by metallicity/metallicity range.
+
         Args:
             - Z: Lower bound or exact value
             - Z_max: optional upper bound
@@ -212,6 +214,7 @@ class BSESimulation:
 
         """
         Filter systems by a specific property range.
+        
         Args:
             - group: HDF5 group for data
             - prop: property name (e.g., 'mass1', 'mass2', 'separation', etc)

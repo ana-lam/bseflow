@@ -35,20 +35,71 @@ class BSESimulation:
         self.fc_seeds = None
         self.fc_seeds_2 = None
 
+        self.all_data = {}
+
         self.rates_dict = {}
         self.rates_df = None
+
+    def _load_all_data(self):
+        """
+        Preload all HDF5 groups/fields needed.
+        Store in self.all_data[group][field]
+        """
+
+        # Grouped list of all needed fields
+        files_and_fields = [
+            ('systems', ['mass1', 'mass2', 'stellar_merger', 'disbound', 'weight', 'Metallicity1']),
+            ('commonEnvelopes', ['stellarType1', 'stellarType2', 'stellarMerger', 'finalStellarType1', 'finalStellarType2', 'optimisticCommonEnvelopeFlag']),
+            ('RLOF', ['radius1', 'radius2', 'flagCEE', 'type1', 'type2', 'type1Prev', 'type2Prev']),
+            ('supernovae', ['Survived', 'previousStellarTypeSN', 'previousStellarTypeCompanion', 'flagPISN', 'flagPPISN']),
+            ('formationChannels', ['stellar_type_K1', 'stellar_type_K2']),
+            ('doubleCompactObjects', ['mergesInHubbleTimeFlag'])
+        ]
+
+        # Group data for one-time load
+        grouped_fields = []
+        for group, fields in files_and_fields:
+            grouped_fields.append((self.file, group, fields, {}))
+
+        # Read once
+        result = multiprocess_files(grouped_fields, selected_seeds=self.selected_seeds)
+
+        # Unpack and store by group
+        self.all_data = {
+            'systems': {},
+            'commonEnvelopes': {},
+            'RLOF': {},
+            'supernovae': {},
+            'formationChannels': {},
+            'doubleCompactObjects': {}
+        }
+
+        idx = 0
+        for file, group, fields, _ in grouped_fields:
+            values = result[idx]
+            for f, val in zip(fields, values[1:] if group == 'systems' else values[1:]):
+                self.all_data[group][f] = val
+            self.all_data[group]['seeds'] = values[0]
+            idx += 1
+
+    def get_fields(self, group, *fields):
+        """
+        Helper function to easily call data from self.all_data.
+        """
+        values = tuple(self.all_data[group][field] for field in fields)
+        return values[0] if len(values) == 1 else values    
 
     def clean_buggy_systems(self):
         
         files_and_fields = [
-            (self.file, 'systems', ['mass1', 'stellar_merger', 'disbound', 'weight'], {}),
+            (self.file, 'systems', ['stellar_merger', 'disbound', 'weight'], {}),
             (self.file, 'commonEnvelopes', ['stellarType1', 'stellarType2', 'stellarMerger'], {}),
             (self.file, 'RLOF', ['radius1', 'radius2'], {}),
             (self.file, 'supernovae', ['Survived'], {}),
             (self.file, 'formationChannels', ['stellar_type_K1', 'stellar_type_K2'], {})
         ]
 
-        (sys_seeds, ZAMSmass1, stellar_merger, disbound, weight), \
+        (sys_seeds, stellar_merger, disbound, weight), \
         (ce_seeds, stellarType1, stellarType2, ce_stellar_merger), \
         (rlof_seeds, radius1, radius2),  \
         (sn_seeds, survived), \
@@ -223,26 +274,18 @@ class BSESimulation:
         }
     
     def _prepare_data(self):
-        
-        files_and_fields = [
-            (self.file, 'systems', ['weight', 'Metallicity1'], {}),
-            (self.file, 'RLOF', ['type1', 'type2', 'type1Prev', 'type2Prev'], {}),
-            (self.file, 'formationChannels', ['stellar_type_K1', 'stellar_type_K2'], {}),
-            (self.file, 'supernovae', ['previousStellarTypeSN', 'previousStellarTypeCompanion', 'flagPISN', 'flagPPISN'], {}),
-            (self.file, 'doubleCompactObjects', ['mergesInHubbleTimeFlag'], {})
-        ]
 
-        (sys_seeds, weights, metallicities), \
-        (rlof_seeds, type1, type2, type1Prev, type2Prev), \
-        (f_seeds, stellar_type_K1, stellar_type_K2), \
-        (sn_seeds, previousStellarTypeSN, previousStellarTypeCompanion, flagPISN, flagPPISN), \
-        (dco_seeds, mergesInHubbleTimeFlag) = multiprocess_files(files_and_fields, selected_seeds=self.selected_seeds)
+        sys_seeds, weights, metallicities = self.get_fields('systems', 'seeds', 'weight', 'Metallicity1')
+        rlof_seeds, type1, type2, type1Prev, type2Prev = self.get_fields(
+            'RLOF', 'seeds', 'type1', 'type2', 'type1Prev', 'type2Prev')
+        f_seeds, stellar_type_K1, stellar_type_K2 = self.get_fields(
+            'formationChannels', 'seeds', 'stellar_type_K1', 'stellar_type_K2')
+        sn_seeds, previousStellarTypeSN, previousStellarTypeCompanion, flagPISN, flagPPISN = self.get_fields(
+            'supernovae', 'seeds', 'previousStellarTypeSN', 'previousStellarTypeCompanion', 
+            'flagPISN', 'flagPPISN')
+        dco_seeds = self.get_fields('doubleCompactObjects', 'seeds')
 
         self.sys_seeds = sys_seeds
-
-        # # total mass evolved per Z for astrophysical rates
-        # _, total_mass = self.total_massEvolvedPerZ(pathCOMPASh5=self.file, Mlower=5.0, Mupper=150.0)
-        # self.total_mass = np.sum(total_mass)
 
         # define weights if specified
         self.weights = self.weights if self.weights is not None else weights
@@ -319,29 +362,21 @@ class BSESimulation:
 
     def calculate_ZAMS(self):
 
-        files_and_fields = [
-            (self.file, 'systems', ['stellar_merger'], {}),
-            (self.file, 'RLOF', ['type1', 'type2', 'type1Prev', 'type2Prev'], {}),
-            (self.file, 'commonEnvelopes', ['optimisticCommonEnvelopeFlag'], {}),
-            (self.file, 'supernovae', ['previousStellarTypeSN', 'previousStellarTypeCompanion'], {}),
-        ]
+        sys_seeds, stellar_merger = self.get_fields('systems', 'seeds', 'stellar_merger')
+        rlof_seeds, type1, type2, type1Prev, type2Prev = self.get_fields('RLOF', 'seeds', 'type1', 'type2', 'type1Prev', 'type2Prev')
+        ce_seeds = self.get_fields('commonEnvelopes', 'seeds')
+        sn_seeds, previousStellarTypeSN, previousStellarTypeCompanion = self.get_fields('supernovae', 'seeds', 'previousStellarTypeSN', 'previousStellarTypeCompanion')
 
-        (sys_seeds, stellar_merger), \
-        (rlof_seeds, type1, type2, type1Prev, type2Prev), \
-        (ce_seeds, optimisticCEflag), \
-        (sn_seeds, previousStellarTypeSN, previousStellarTypeCompanion) = multiprocess_files(files_and_fields, selected_seeds=self.sys_seeds)
-
-        
         # ZAMS
         self.rates_dict['ZAMS'] = self.calculate_rate(self.sys_seeds, self.sys_seeds, self.weights, self.total_weight, 
                                                       self.metallicities, self.unique_Z, self.total_mass)
         
         # useful MT masks
-        pre_sn_mask, post_sn_mask, invalid_rlof_mask, pre_sn_ce_mask, post_sn_ce_mask = mask_mass_transfer_episodes(self.file, selected_seeds=self.sys_seeds)
+        pre_sn_mask, post_sn_mask, invalid_rlof_mask, pre_sn_ce_mask, post_sn_ce_mask = mask_mass_transfer_episodes(self.file, selected_seeds=sys_seeds)
         RLOF_mask = in1d(sys_seeds, rlof_seeds[~invalid_rlof_mask])
         pre_MT_seeds = np.concatenate((rlof_seeds[pre_sn_mask==1], ce_seeds[pre_sn_ce_mask==1]))
         CEE_mask = in1d(sys_seeds, ce_seeds)
-        stellar_merger = stellar_merger[in1d(sys_seeds, self.sys_seeds)]
+        # stellar_merger = stellar_merger[in1d(sys_seeds, self.sys_seeds)]
         
         # useful SN masks
         SN_mask = in1d(sys_seeds, sn_seeds)
@@ -359,24 +394,22 @@ class BSESimulation:
 
 
         # ZAMS to stellar merger at birth
-        self.rates_dict['ZAMS_StellarMergerBeforeMT'] = self.calculate_rate(self.sys_seeds, self.sys_seeds, self.weights, self.total_weight, 
+        self.rates_dict['ZAMS_StellarMergerBeforeMT'] = self.calculate_rate(sys_seeds, self.sys_seeds, self.weights, self.total_weight, 
                                                                             self.metallicities, self.unique_Z, self.total_mass,
                                                                             condition = ( (~RLOF_mask) & (stellar_merger==1) & (~SN_mask)) | ((~RLOF_mask) & (~SN_mask)),
                                                                             wd_mask=self.wd_mask)
 
     def calculate_MT1(self):
 
-        files_and_fields = [
-            (self.file, 'systems', ['stellar_merger'], {}),
-            (self.file, 'RLOF', ['flagCEE', 'type1', 'type2', 'type1Prev', 'type2Prev'], {}),
-            (self.file, 'commonEnvelopes', ['stellarMerger', 'stellarType1', 'stellarType2',  'finalStellarType1', 'finalStellarType2', 'optimisticCommonEnvelopeFlag'], {}),
-            (self.file, 'supernovae', ['previousStellarTypeSN', 'previousStellarTypeCompanion'], {})
-        ]
+        sys_seeds, stellar_merger = self.get_fields('systems', 'seeds', 'stellar_merger')
 
-        (sys_seeds, stellar_merger), \
-        (rlof_seeds, flagCEE, type1, type2, type1Prev, type2Prev), \
-        (ce_seeds, ce_stellar_merger, ce_type1, ce_type2, ce_type1_final, ce_type2_final, optimisticCEflag), \
-        (sn_seeds, previousStellarTypeSN, previousStellarTypeCompanion) = multiprocess_files(files_and_fields, selected_seeds=self.selected_seeds)
+        rlof_seeds, flagCEE, type1, type2, type1Prev, type2Prev = self.get_fields(
+            'RLOF', 'seeds', 'flagCEE', 'type1', 'type2', 'type1Prev', 'type2Prev')
+        ce_seeds, ce_stellar_merger, ce_type1, ce_type2, ce_type1_final, ce_type2_final, optimisticCEflag = self.get_fields(
+            'commonEnvelopes', 'seeds', 'stellarMerger', 'stellarType1', 'stellarType2',
+            'finalStellarType1', 'finalStellarType2', 'optimisticCommonEnvelopeFlag')
+        sn_seeds, previousStellarTypeSN, previousStellarTypeCompanion = self.get_fields(
+            'supernovae', 'seeds', 'previousStellarTypeSN', 'previousStellarTypeCompanion')
 
         # MT masks
         pre_sn_mask, post_sn_mask, invalid_rlof_mask, pre_sn_ce_mask, post_sn_ce_mask = mask_mass_transfer_episodes(self.file, selected_seeds=self.selected_seeds)
@@ -462,17 +495,12 @@ class BSESimulation:
 
     def calculate_SN1(self):
 
-        files_and_fields = [
-            (self.file, 'systems', ['stellar_merger'], {}),
-            (self.file, 'RLOF', ['flagCEE'], {}),
-            (self.file, 'commonEnvelopes', ['stellarMerger', 'stellarType1', 'stellarType2', 'optimisticCommonEnvelopeFlag'], {}),
-            (self.file, 'supernovae', ['Survived', 'previousStellarTypeSN', 'previousStellarTypeCompanion'], {})
-        ]
-
-        (sys_seeds, stellar_merger), \
-        (rlof_seeds, flagCEE), \
-        (ce_seeds, ce_stellar_merger, ce_type1, ce_type2, optimisticCEflag), \
-        (sn_seeds, survived, previousStellarTypeSN, previousStellarTypeCompanion) = multiprocess_files(files_and_fields, selected_seeds=self.selected_seeds)
+        rlof_seeds, flagCEE = self.get_fields('RLOF', 'seeds', 'flagCEE')
+        ce_seeds, ce_stellar_merger, ce_type1, ce_type2, optimisticCEflag = self.get_fields(
+            'commonEnvelopes', 'seeds', 'stellarMerger', 'stellarType1', 'stellarType2',
+            'optimisticCommonEnvelopeFlag')
+        sn_seeds, survived, previousStellarTypeSN, previousStellarTypeCompanion = self.get_fields(
+            'supernovae', 'seeds', 'Survived', 'previousStellarTypeSN', 'previousStellarTypeCompanion')
 
 
         # MT masks
@@ -553,17 +581,13 @@ class BSESimulation:
 
     def calculate_MT2(self):
 
-        files_and_fields = [
-            (self.file, 'systems', ['stellar_merger'], {}),
-            (self.file, 'RLOF', ['flagCEE', 'type1', 'type2', 'type1Prev', 'type2Prev'], {}),
-            (self.file, 'commonEnvelopes', ['stellarMerger', 'stellarType1', 'stellarType2',  'finalStellarType1', 'finalStellarType2', 'optimisticCommonEnvelopeFlag'], {}),
-            (self.file, 'supernovae', ['Survived', 'previousStellarTypeSN', 'previousStellarTypeCompanion'], {})
-        ]
-
-        (sys_seeds, stellar_merger), \
-        (rlof_seeds, flagCEE, type1, type2, type1Prev, type2Prev), \
-        (ce_seeds, ce_stellar_merger, ce_type1, ce_type2, ce_type1_final, ce_type2_final, optimisticCEflag), \
-        (sn_seeds, survived, previousStellarTypeSN, previousStellarTypeCompanion) = multiprocess_files(files_and_fields, selected_seeds=self.selected_seeds)
+        sys_seeds, stellar_merger = self.get_fields('systems', 'seeds', 'stellar_merger')
+        rlof_seeds, flagCEE, type1, type2, type1Prev, type2Prev = self.get_fields(
+            'RLOF', 'seeds', 'flagCEE', 'type1', 'type2', 'type1Prev', 'type2Prev')
+        ce_seeds, ce_stellar_merger, ce_type1, ce_type2, ce_type1_final, ce_type2_final, optimisticCEflag = self.get_fields(
+            'commonEnvelopes', 'seeds', 'stellarMerger', 'stellarType1', 'stellarType2',
+            'finalStellarType1', 'finalStellarType2', 'optimisticCommonEnvelopeFlag')
+        sn_seeds= self.get_fields('supernovae', 'seeds')
 
         # MT masks
         pre_sn_mask, post_sn_mask, invalid_rlof_mask, pre_sn_ce_mask, post_sn_ce_mask = mask_mass_transfer_episodes(self.file, selected_seeds=self.selected_seeds)
@@ -657,19 +681,15 @@ class BSESimulation:
 
     def calculate_SN2(self):
 
-        files_and_fields = [
-            (self.file, 'systems', ['stellar_merger'], {}),
-            (self.file, 'RLOF', ['flagCEE'], {}),
-            (self.file, 'commonEnvelopes', ['stellarMerger', 'stellarType1', 'stellarType2', 'optimisticCommonEnvelopeFlag'], {}),
-            (self.file, 'supernovae', ['Survived', 'previousStellarTypeSN', 'previousStellarTypeCompanion'], {}),
-            (self.file, 'doubleCompactObjects', ['mergesInHubbleTimeFlag'], {})
-        ]
-
-        (sys_seeds, stellar_merger), \
-        (rlof_seeds, flagCEE), \
-        (ce_seeds, ce_stellar_merger, ce_type1, ce_type2, optimisticCEflag), \
-        (sn_seeds, survived, previousStellarTypeSN, previousStellarTypeCompanion), \
-        (dco_seeds, mergesInHubbleTimeFlag) = multiprocess_files(files_and_fields, selected_seeds=self.selected_seeds)
+        sys_seeds = self.get_fields('systems', 'seeds')
+        rlof_seeds, flagCEE = self.get_fields(
+            'RLOF', 'seeds', 'flagCEE')
+        ce_seeds, ce_stellar_merger, ce_type1, ce_type2, optimisticCEflag = self.get_fields(
+            'commonEnvelopes', 'seeds', 'stellarMerger', 'stellarType1', 'stellarType2',
+            'optimisticCommonEnvelopeFlag')
+        sn_seeds, survived, previousStellarTypeSN, previousStellarTypeCompanion = self.get_fields(
+            'supernovae', 'seeds', 'Survived', 'previousStellarTypeSN', 'previousStellarTypeCompanion')
+        dco_seeds = self.get_fields('doubleCompactObjects', 'seeds')
 
         # MT masks
         pre_sn_mask, post_sn_mask, invalid_rlof_mask, pre_sn_ce_mask, post_sn_ce_mask = mask_mass_transfer_episodes(self.file, selected_seeds=self.selected_seeds)
@@ -762,13 +782,10 @@ class BSESimulation:
 
     def calculate_DCO(self):
 
-        files_and_fields = [
-            (self.file, 'doubleCompactObjects', ['mergesInHubbleTimeFlag'], {}),
-            (self.file, 'commonEnvelopes', ['stellarType1', 'stellarType2', 'optimisticCommonEnvelopeFlag'], {})
-        ]
-
-        (dco_seeds, mergesInHubbleTimeFlag), \
-        (ce_seeds, ce_type1, ce_type2,  optimisticCEflag) = multiprocess_files(files_and_fields, selected_seeds=self.selected_seeds)
+        ce_seeds, ce_type1, ce_type2, optimisticCEflag = self.get_fields(
+            'commonEnvelopes', 'seeds', 'stellarType1', 'stellarType2',
+            'optimisticCommonEnvelopeFlag')
+        dco_seeds, mergesInHubbleTimeFlag = self.get_fields('doubleCompactObjects', 'seeds', 'mergesInHubbleTimeFlag')
 
         # optimistic CE flags
         optimistic_CE_pre_sn_CE_mask = (optimisticCEflag==1) & (ce_type1 < 13) & (ce_type2 < 13)
@@ -807,6 +824,7 @@ class BSESimulation:
             if self.formation_channel_2 is not None:
                 self.formation_channel_2 = masks[self.formation_channel_2]
 
+        self._load_all_data()
         self._prepare_data()
 
         self.calculate_ZAMS()

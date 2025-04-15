@@ -8,11 +8,25 @@ import h5py
 import os
 
 class BSESimulation:
-    """BSESimulation"""
+    """BSESimulation: Calculate stellar evolution intermediate stage rates 
+    from COMPAS HDF5 outputs."""
 
     def __init__(self, filepath, selected_seeds=None, weights=None, CEE=False,
                  include_wds=False, include_pisn=False, optimistic_CE=False,
                  formation_channel=None, formation_channel_2=None):
+        
+        """
+        Args:
+            - filepath: path to the HDF5 simulation output
+            - selected_seeds: list of systems to analyze
+            - weights: optional array of unique weights to use
+            - CEE: separate by CE or SMT for MT phases
+            - include_wds: include WD systems
+            - include_pisn: include (P)PISN systems
+            - optimistic_CE: flag for optimistic CE model
+            - formation_channel: optional formation channel mask (MT1)
+            - formation_channel_2: optional formation channel mask (MT2)
+        """
         
         self.file = filepath
         self.selected_seeds = selected_seeds
@@ -28,6 +42,7 @@ class BSESimulation:
         self.wd_rate = 0.0
         self.wd_rate_per_mass = 0.0
         self.wd_mask = None
+        
         self.total_mass = None
         self.total_weight = None
         self.unique_Z = None
@@ -35,6 +50,7 @@ class BSESimulation:
         self.fc_seeds = None
         self.fc_seeds_2 = None
 
+        # cache all loaded data from HDF5 file
         self.all_data = {}
 
         self.rates_dict = {}
@@ -46,7 +62,7 @@ class BSESimulation:
         Store in self.all_data[group][field]
         """
 
-        # Grouped list of all needed fields
+        # grouped list of all needed fields
         files_and_fields = [
             ('systems', ['stellar_merger', 'disbound', 'weight', 'Metallicity1']),
             ('commonEnvelopes', ['stellarType1', 'stellarType2', 'stellarMerger', 'finalStellarType1', 'finalStellarType2', 'optimisticCommonEnvelopeFlag']),
@@ -56,15 +72,14 @@ class BSESimulation:
             ('doubleCompactObjects', ['mergesInHubbleTimeFlag'])
         ]
 
-        # Group data for one-time load
+        # group data for one-time load
         grouped_fields = []
         for group, fields in files_and_fields:
             grouped_fields.append((self.file, group, fields, {}))
-
-        # Read once
+        
+        # read data
         result = multiprocess_files(grouped_fields, selected_seeds=self.selected_seeds)
 
-        # Unpack and store by group
         self.all_data = {
             'systems': {},
             'commonEnvelopes': {},
@@ -85,11 +100,23 @@ class BSESimulation:
     def get_fields(self, group, *fields):
         """
         Helper function to easily call data from self.all_data.
+        Args:
+            - group: which group in HDF5 ('systems', 'RLOF', 'supernovae', etc)
+            - fields: field names to extract
+        Returns:
+            - Array or tuple of arrays of field data
         """
         values = tuple(self.all_data[group][field] for field in fields)
         return values[0] if len(values) == 1 else values    
 
     def clean_buggy_systems(self):
+
+        """
+        Clean buggy systems from dataset.
+            - Systems with negative radii
+            - Non-merging, non-unbound systems that never go SN but remain stellar type < 10
+            - Systems with invalid MT
+        """
         
         files_and_fields = [
             (self.file, 'systems', ['stellar_merger', 'disbound', 'weight'], {}),
@@ -150,10 +177,21 @@ class BSESimulation:
         sys_mask = (~in1d(sys_seeds, buggy_seeds))
 
         self.selected_seeds = sys_seeds[sys_mask]
+
+        # add WD to WD factor
         self.wd_rate = wd_rate
         self.wd_rate_per_mass = wd_rate_per_mass
 
     def specify_metallicity(self, Z, Z_max=None):
+
+        """
+        Filter systems by metallicity/metallicity range.
+        Args:
+            - Z: Lower bound or exact value
+            - Z_max: optional upper bound
+        Returns:
+            - Array of seeds within Z range
+        """
 
         files_and_fields = [
             (self.file, 'systems', ['Metallicity1'], {})
@@ -169,6 +207,17 @@ class BSESimulation:
         return self.selected_seeds[Z_mask] if self.selected_seeds is not None else sys_seeds[Z_mask]
     
     def filter_by_property(self, group, prop, min_val=None, max_val=None):
+
+        """
+        Filter systems by a specific property range.
+        Args:
+            - group: HDF5 group for data
+            - prop: property name (e.g., 'mass1', 'mass2', 'separation', etc)
+            - min_val: Lower bound or exact value
+            - max_val: optional upper bound
+        Returns:
+            - Array of seeds within specified property range
+        """
 
         if prop == 'q_i':
             files_and_fields = [
@@ -197,7 +246,28 @@ class BSESimulation:
     def calculate_rate(self, data, systems, weights, total_weight, metallicities, unique_Z, total_mass,
                        CEE=None, condition=None, addtnl_ce_seeds=None, rel_rate=None, formation_channel=None, wd_mask=None):
         
+        """
+        Compute intermediate stage rates.
 
+        Args:
+            - data: seeds to process
+            - systems: our system seeds (from `systems` HDF5 group)
+            - weights: simulation weights to use
+            - total_weight: sum of weights
+            - metallicities: system metallicities
+            - unique_Z: grid of unique metallicities in simulation
+            - total_mass: total stellar mass evolved
+            - CEE: split by CE or SMT for MT phases
+            - condition: how to filter data to calculate intermediate stage
+            - addtnl_ce_seeds: optional additional CE seeds to consider that are not in `RLOF` file
+            - rel_rate: optional reference to calculate rates relative to
+            - formation_channel: optional formation channel mask
+            - wd_mask: mask to exclude WD systems
+
+        Returns:
+            Dict of seeds, counts, absolute/relative rates, per mass rates, CEE split rates, unique Z
+
+        """
 
         def compute_rate(mask, total_weight, fc=None, addtnl_ce_seeds=None, rel_rate=None, wd_mask=None):
 
@@ -274,6 +344,10 @@ class BSESimulation:
         }
     
     def _prepare_data(self):
+
+        """
+        Apply initial filtering and prepare simulation data for rate calculation.
+        """    
 
         sys_seeds, weights, metallicities = self.get_fields('systems', 'seeds', 'weight', 'Metallicity1')
         rlof_seeds, type1, type2, type1Prev, type2Prev = self.get_fields(
@@ -814,7 +888,12 @@ class BSESimulation:
                                                             wd_mask=self.wd_mask)
 
     def calculate_all_rates(self):
+
+        """
+        Perform all methods to yield results dictionary and dataframe.
+        """
         
+        # clean data
         self.clean_buggy_systems()
 
         if self.formation_channel is not None:
@@ -823,9 +902,12 @@ class BSESimulation:
             if self.formation_channel_2 is not None:
                 self.formation_channel_2 = masks[self.formation_channel_2]
 
+        # cache data
         self._load_all_data()
+        # prepare data for calculations
         self._prepare_data()
 
+        # calculate rates
         self.calculate_ZAMS()
         self.calculate_MT1()
         self.calculate_SN1()
@@ -847,6 +929,10 @@ class BSESimulation:
         return self.rates_dict, self.rates_df
 
     def _build_dataframe(self):
+
+        """
+        Build dataframe with intermediate stage rates.
+        """
         
         self.rates_df = pd.DataFrame({
             f'rates' : {key: value['rate'] for key, value in self.rates_dict.items()},

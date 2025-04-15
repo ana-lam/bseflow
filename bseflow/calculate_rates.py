@@ -48,7 +48,7 @@ class BSESimulation:
 
         # Grouped list of all needed fields
         files_and_fields = [
-            ('systems', ['mass1', 'mass2', 'stellar_merger', 'disbound', 'weight', 'Metallicity1']),
+            ('systems', ['stellar_merger', 'disbound', 'weight', 'Metallicity1']),
             ('commonEnvelopes', ['stellarType1', 'stellarType2', 'stellarMerger', 'finalStellarType1', 'finalStellarType2', 'optimisticCommonEnvelopeFlag']),
             ('RLOF', ['radius1', 'radius2', 'flagCEE', 'type1', 'type2', 'type1Prev', 'type2Prev']),
             ('supernovae', ['Survived', 'previousStellarTypeSN', 'previousStellarTypeCompanion', 'flagPISN', 'flagPPISN']),
@@ -376,7 +376,6 @@ class BSESimulation:
         RLOF_mask = in1d(sys_seeds, rlof_seeds[~invalid_rlof_mask])
         pre_MT_seeds = np.concatenate((rlof_seeds[pre_sn_mask==1], ce_seeds[pre_sn_ce_mask==1]))
         CEE_mask = in1d(sys_seeds, ce_seeds)
-        # stellar_merger = stellar_merger[in1d(sys_seeds, self.sys_seeds)]
         
         # useful SN masks
         SN_mask = in1d(sys_seeds, sn_seeds)

@@ -1,111 +1,73 @@
-#!/usr/bin/env python3
-
 import argparse
 import os
-from calculate_rates import calculate_simulation_rates, clean_buggy_systems, specify_metallicity, specify_masses, filter_by_property
+from calculate_rates import BSESimulation
 from formation_channels import identify_formation_channels
-import h5py as h5
-import numpy as np
 from file_processing import create_h5_file
 
+def output_results(file, output_dir, save_path, CEE=False, Z=None, Z_max=None, m_min=None, m_max=None,
+                   MT1mask=None, MT2mask=None, prop_filter=None, selected_seeds=None, write_seeds=None,
+                   optimistic_CE=False, include_wds=False):
+    
+    print("starting rate calculation...")
 
-def output_results(file, output_dir, save_path, CEE=False, Z=None, Z_max=None, m_min=None, m_max=None, MT1mask=None, MT2mask=None, filter=None, selected_seeds=None, write_seeds=None):
-
-    print("starting...")
-
-    model = file.split("/")[-2] # record model from file path name
-
-    cleaned_seeds, WD_factor, WD_rate = clean_buggy_systems(file, selected_seeds=selected_seeds)
+    model = file.split("/")[-2]
+    temp_sim = BSESimulation(file, selected_seeds=selected_seeds, CEE=CEE, include_wds=include_wds,
+                        optimistic_CE=optimistic_CE)
 
     if Z:
-        cleaned_seeds = specify_metallicity(file, Z, Z_max=Z_max, selected_seeds=cleaned_seeds)
+        selected_seeds = temp_sim.specify_metallicity(Z, Z_max=Z_max)
     if m_min or m_max:
-        cleaned_seeds = specify_masses(file, m_min=m_min, m_max=m_max, selected_seeds=cleaned_seeds)
-    if filter:
-        if len(filter)==3: 
-            cleaned_seeds = filter_by_property(file, filter[0], filter[1], float(filter[2]), selected_seeds=cleaned_seeds)
-        if len(filter)==4:
-            cleaned_seeds = filter_by_property(file, filter[0], filter[1], float(filter[2]), float(filter[3]), selected_seeds=cleaned_seeds)
-
-    print("calculating channels...")
-    if MT1mask is not None:
-        channels, masks = identify_formation_channels(file, selected_seeds=cleaned_seeds)
+        selected_seeds = temp_sim.filter_by_property('systems', 'mass1', min_val=m_min, max_val=m_max)
+    if prop_filter:
+        if len(prop_filter) == 3:
+            selected_seeds = temp_sim.filter_by_property(prop_filter[0], prop_filter[1], 
+                                                        min_val=float(prop_filter[2]))
+        elif len(prop_filter) == 4:
+            selected_seeds = temp_sim.filter_by_property(prop_filter[0], prop_filter[1], 
+                                                        min_val=float(prop_filter[2]), 
+                                                        max_val=float(prop_filter[3]))
     
-    print("calculating rates...")
-    if MT1mask is None:
-        rates_dict_wd, rates_df_wd = calculate_simulation_rates(file, formation_channel=None, formation_channel_2=None, 
-                                                                selected_seeds=cleaned_seeds, white_dwarfs=True, 
-                                                                additional_WD_factor=[WD_factor, WD_rate], CEE=CEE)
-        rates_dict, rates_df = calculate_simulation_rates(file, formation_channel=None, formation_channel_2=None, 
-                                                          selected_seeds=cleaned_seeds, additional_WD_factor=[WD_factor, WD_rate], 
-                                                          CEE=CEE)
-    elif MT2mask is None:
-        rates_dict, rates_df = calculate_simulation_rates(file, formation_channel=masks[MT1mask], formation_channel_2=None, 
-                                                          selected_seeds=cleaned_seeds, additional_WD_factor=[WD_factor, WD_rate])
-    else:
-        rates_dict, rates_df = calculate_simulation_rates(file, formation_channel=masks[MT1mask], 
-                                                          formation_channel_2=(masks[MT1mask] & masks[MT2mask]), 
-                                                          selected_seeds=cleaned_seeds, additional_WD_factor=[WD_factor, WD_rate])
-
+    sim = BSESimulation(file, selected_seeds=selected_seeds, CEE=CEE, include_wds=include_wds,
+                        optimistic_CE=optimistic_CE, formation_channel=MT1mask, 
+                        formation_channel_2=MT2mask)
+            
+    
     if not os.path.isdir(f'/mnt/home/alam1/ceph/data/{output_dir}'):
         os.makedirs(f'/mnt/home/alam1/ceph/data/{output_dir}', exist_ok=True)
     if write_seeds and not os.path.isdir(f'/mnt/home/alam1/ceph/data/{output_dir}/fc_stage_seeds'):
         os.makedirs(f'/mnt/home/alam1/ceph/data/{output_dir}/fc_stage_seeds', exist_ok=True)
 
+    rates_dict, rates_df = sim.calculate_all_rates()
+
+    suffix = "_WD" if include_wds else ""
+
     print("writing csv...")
-    rates_df.to_csv(f'/mnt/home/alam1/ceph/data/{output_dir}/rates_{model}_{save_path}.csv')
+    rates_df.to_csv(f'/mnt/home/alam1/ceph/data/{output_dir}/rates_{model}_{save_path}{suffix}.csv')
     if write_seeds:
-        create_h5_file(f'/mnt/home/alam1/ceph/data/{output_dir}/fc_stage_seeds/{write_seeds}_{model}.h5', rates_dict)
+        create_h5_file(f'/mnt/home/alam1/ceph/data/{output_dir}/fc_stage_seeds/{write_seeds}_{model}{suffix}.h5', rates_dict)
 
-    if 'rates_df_wd' in locals() and not rates_df_wd.empty and rates_df_wd.values.any():
-        rates_df_wd.to_csv(f'/mnt/home/alam1/ceph/data/{output_dir}/rates_{model}_{save_path}_WD.csv')
-
-    if model == 'fiducial' or model == 'unstableCaseBB':
-        print("running calculation with optimistic CE...")
-        print("cleaning out buggy systems...")
-        cleaned_seeds, WD_factor, WD_rate = clean_buggy_systems(file, selected_seeds=None)
-        print("calculating channels...")
-        channels, masks = identify_formation_channels(file, selected_seeds=cleaned_seeds)
-        print("calculating rates...")
-
-        if MT1mask is None:
-            rates_dict_wd, rates_df_wd = calculate_simulation_rates(file, formation_channel=None, formation_channel_2=None, 
-                                                                    optimistic_CE=True, selected_seeds=cleaned_seeds, white_dwarfs=True, 
-                                                                    additional_WD_factor=[WD_factor, WD_rate], CEE=CEE)
-            rates_dict, rates_df = calculate_simulation_rates(file, formation_channel=None, formation_channel_2=None, 
-                                                              optimistic_CE=True, selected_seeds=cleaned_seeds, 
-                                                              additional_WD_factor=[WD_factor, WD_rate], CEE=CEE)
-        elif MT2mask is None:
-            rates_dict, rates_df = calculate_simulation_rates(file, formation_channel=masks[MT1mask], formation_channel_2=None, 
-                                                              optimistic_CE=True, selected_seeds=cleaned_seeds, 
-                                                              additional_WD_factor=[WD_factor, WD_rate])
-        else:
-            rates_dict, rates_df = calculate_simulation_rates(file, formation_channel=masks[MT1mask], 
-                                                              formation_channel_2=(masks[MT1mask] & masks[MT2mask]), 
-                                                              optimistic_CE=True, selected_seeds=cleaned_seeds, 
-                                                              additional_WD_factor=[WD_factor, WD_rate])
-
+    if model =='fiducial' or model == 'unstableCaseBB':
+        print("starting rate calculation with optimistic CE...")
+        sim = BSESimulation(file, selected_seeds=selected_seeds, CEE=CEE, include_wds=include_wds,
+                optimistic_CE=True, formation_channel=MT1mask, 
+                formation_channel_2=MT2mask)
+        print("writing csv...")
         if model == 'fiducial':
-            rates_df.to_csv(f'/mnt/home/alam1/ceph/data/{output_dir}/rates_optimisticCE_{save_path}.csv')
+            rates_df.to_csv(f'/mnt/home/alam1/ceph/data/{output_dir}/rates_optimisticCE_{save_path}{suffix}.csv')
             if write_seeds:
-                create_h5_file(f'/mnt/home/alam1/ceph/data/{output_dir}/fc_stage_seeds/{write_seeds}_optimisticCE.h5', rates_dict)
-
-            if 'rates_df_wd' in locals() and not rates_df_wd.empty and rates_df_wd.values.any():
-                rates_df_wd.to_csv(f'/mnt/home/alam1/ceph/data/{output_dir}/rates_optimisticCE_{save_path}_WD.csv')
-
+                create_h5_file(f'/mnt/home/alam1/ceph/data/{output_dir}/fc_stage_seeds/{write_seeds}_optimisticCE{suffix}.h5', rates_dict)
         elif model == 'unstableCaseBB':
-            rates_df.to_csv(f'/mnt/home/alam1/ceph/data/{output_dir}/rates_unstableCaseBB_opt_{save_path}.csv')
+            rates_df.to_csv(f'/mnt/home/alam1/ceph/data/{output_dir}/rates_unstableCaseBB_opt_{save_path}{suffix}.csv')
             if write_seeds:
-                create_h5_file(f'/mnt/home/alam1/ceph/data/{output_dir}/fc_stage_seeds/{write_seeds}_unstableCaseBB_opt.h5', rates_dict)
+                create_h5_file(f'/mnt/home/alam1/ceph/data/{output_dir}/fc_stage_seeds/{write_seeds}_unstableCaseBB_opt{suffix}.h5', rates_dict)
 
-            if 'rates_df_wd' in locals() and not rates_df_wd.empty and rates_df_wd.values.any():
-                rates_df_wd.to_csv(f'/mnt/home/alam1/ceph/data/{output_dir}/rates_unstableCaseBB_opt_{save_path}_WD.csv')
+def main(file, output_dir, save_path, CEE, Z, Z_max, m_min, m_max, MT1mask, MT2mask, prop_filter, 
+         selected_seeds=None, write_seeds=None):
 
-def main(file, output_dir, save_path, CEE, Z, Z_max, m_min, m_max, MT1mask, MT2mask, filter, selected_seeds=None, write_seeds=None):
+    output_results(file, output_dir, save_path, CEE, Z, Z_max, m_min, m_max, MT1mask, MT2mask, 
+                   prop_filter, selected_seeds=selected_seeds, write_seeds=write_seeds)
 
-    output_results(file, output_dir, save_path, CEE, Z, Z_max, m_min, m_max, MT1mask, MT2mask, filter, selected_seeds=selected_seeds, write_seeds=write_seeds)
-
-    print("done!")
+    print("done!")            
 
 
 if __name__ == "__main__":
@@ -138,4 +100,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     main(args.file, args.output_dir, args.save_path, args.CEE, 
          args.Z, args.Z_max, args.m_min, args.m_max, args.MT1mask, 
-         args.MT2mask, args.filter, args.selected_seeds, args.write_seeds)
+         args.MT2mask, args.prop_filter, args.selected_seeds, args.write_seeds)                

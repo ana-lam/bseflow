@@ -58,7 +58,7 @@ better_labels = {
     "NoMerger" : r'Merges $> t_H$'
     }
 
-def sankeyDataTransform(df, CEE=False, formation_channel=False, custom_path=None):
+def sankey_data_transform(df, CEE=False, formation_channel=False, custom_path=None):
 
     df = df[~df.index.str.contains("Survive")].copy()
 
@@ -171,7 +171,7 @@ def sankeyDataTransform(df, CEE=False, formation_channel=False, custom_path=None
 
     return df
 
-def plotSankey(df, title="", CEE=False, formation_channel=False, save_path=None, custom_trash=None):
+def plot_sankey(df, title="", CEE=False, formation_channel=False, save_path=None, custom_trash=None):
 
     node_mapping = {
     "ZAMS" : "0",
@@ -259,8 +259,7 @@ def plotSankey(df, title="", CEE=False, formation_channel=False, save_path=None,
         for phase in custom_trash:  
             phase_index = list(CE_node_mapping.keys()).index(phase)
             node_colors[phase_index] = "rgba(220, 85, 0, 0.4)"
-    print(df)
-    print(labels)
+
     fig = go.Figure(data=[go.Sankey(
     valueformat='.3r',
     node=dict(

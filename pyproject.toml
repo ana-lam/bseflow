@@ -1,0 +1,25 @@
+[project]
+name = "bseflow"
+version = "0.1.0"
+description = "Binary stellar evolution tools for investigating intermediate stages"
+authors = [
+  {name = "Ana Lam", email = "anakristinalam@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+  "numpy", 
+  "matplotlib",
+  "pandas",
+  "scipy",
+  "numba",
+  "plotly
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+]
+
+[tool.setuptools.packages.find]
+where = ["bseflow"]

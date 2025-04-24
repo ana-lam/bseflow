@@ -1,7 +1,7 @@
-from file_processing import multiprocess_files
-from formation_channels import mask_mass_transfer_episodes, identify_formation_channels
-from total_mass_evolved_per_Z import totalMassEvolvedPerZ
-from utils import in1d
+from bseflow.file_processing import multiprocess_files
+from bseflow.formation_channels import mask_mass_transfer_episodes, identify_formation_channels
+from bseflow.total_mass_evolved_per_Z import totalMassEvolvedPerZ
+from bseflow.utils import in1d
 import pandas as pd
 import numpy as np
 import h5py

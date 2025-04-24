@@ -1,6 +1,6 @@
 import numpy as np 
-from file_processing import multiprocess_files
-from utils import in1d
+from bseflow.file_processing import multiprocess_files
+from bseflow.utils import in1d
 import collections
 
 def mask_DCO_type(file, selected_seeds=None):

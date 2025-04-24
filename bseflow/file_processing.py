@@ -6,8 +6,8 @@ import os
 import fnmatch
 import re
 import json
-from utils import in1d
-from data_dicts.model_variations import model_variations
+from bseflow.utils import in1d
+from bseflow.data_dicts import model_variations
 
 def find_particular_files(directory, filename_pattern):
     """

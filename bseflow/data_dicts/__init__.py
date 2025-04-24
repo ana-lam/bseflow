@@ -1,4 +1,4 @@
-from model_variations import model_variations
+from .model_variations import model_variations
 
 import json
 import os

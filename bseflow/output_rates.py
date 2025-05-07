@@ -1,7 +1,6 @@
 import argparse
 import os
 from bseflow.calculate_rates import BSESimulation
-from bseflow.formation_channels import identify_formation_channels
 from bseflow.file_processing import create_h5_file
 
 def output_results(file, output_dir, save_path, CEE=False, Z=None, Z_max=None, m_min=None, m_max=None,

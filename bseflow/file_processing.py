@@ -3,9 +3,7 @@ import pandas as pd
 import h5py as h5
 import multiprocessing as mp
 import os
-import fnmatch
 import re
-import json
 from bseflow.utils import in1d
 from bseflow.data_dicts import model_variations
 

@@ -4,8 +4,6 @@ from bseflow.total_mass_evolved_per_Z import totalMassEvolvedPerZ
 from bseflow.utils import in1d
 import pandas as pd
 import numpy as np
-import h5py
-import os
 
 class BSESimulation:
     """

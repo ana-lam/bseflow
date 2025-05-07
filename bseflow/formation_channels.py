@@ -1,7 +1,6 @@
 import numpy as np 
 from bseflow.file_processing import multiprocess_files
 from bseflow.utils import in1d
-import collections
 
 def mask_DCO_type(file, selected_seeds=None):
     """Create arrays labelled '1' for specific DCO type.

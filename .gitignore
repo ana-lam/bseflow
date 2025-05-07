@@ -2,3 +2,7 @@ __pycache__/
 notebooks/
 *.DS_Store
 venv/
+*.pyc
+*.egg-info/
+dist/
+build/

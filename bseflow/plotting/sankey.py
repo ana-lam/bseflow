@@ -282,6 +282,6 @@ def plot_sankey(df, title="", CEE=False, formation_channel=False, save_path=None
 
     fig.update_layout(title_text=f'{title}', font=dict(size=20))
     if save_path:
-        fig.write_html(f'/mnt/home/alam1/paper_figures/sankey_htmls/{save_path}')
+        fig.write_html(f'/mnt/home/alam1/bseflow/sankey_htmls/{save_path}')
     else:
-        fig.write_html(f'/mnt/home/alam1/paper_figures/sankey_htmls/{df.columns[0].split("_")[0]}.html')
+        fig.write_html(f'/mnt/home/alam1/bseflow/sankey_htmls/{df.columns[0].split("_")[0]}.html')

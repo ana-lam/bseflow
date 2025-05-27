@@ -430,7 +430,7 @@ class BSESimulation:
             self.fc_seeds = None
 
         if self.formation_channel_2 is not None:
-            self.fc_seeds_2 = self.sys_seeds[self.formation_channel_2] if sys_mask is None else self.sys_seeds[self.formation_channel_2[sys_mask]]
+            self.fc_seeds_2 = self.sys_seeds[self.formation_channel & self.formation_channel_2] if sys_mask is None else self.sys_seeds[self.formation_channel[sys_mask] & self.formation_channel_2[sys_mask]]
         elif self.formation_channel_2 is None and self.formation_channel is not None:
             self.fc_seeds_2 = self.fc_seeds
         else:

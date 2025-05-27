@@ -15,11 +15,10 @@ def find_particular_files(directory, filename_pattern):
     pattern = re.compile(filename_pattern)
 
     matching_files = []
-    for root, dirs, files in os.walk(directory):
-        for filename in files:
-            if pattern.match(filename):
-                file_path = os.path.join(root, filename)
-                matching_files.append([filename, file_path])
+    for filename in os.listdir(directory):
+        full_path = os.path.join(directory, filename)
+        if os.path.isfile(full_path) and pattern.match(filename):
+            matching_files.append([filename, full_path])
 
     return np.array(sorted(matching_files,key=lambda x: (x[0])))[:,1]
 

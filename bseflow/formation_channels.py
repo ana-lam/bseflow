@@ -179,15 +179,16 @@ def identify_formation_channels(file, selected_seeds=None):
 
     # Single Core CEE
     # 1st transfer unstable, primary giant branch onto MS secondary
-    single_core = ( (pre_sn_mask==1) & (rlof_primary==1) & (CE_pre_SN_RLOF_mask==1) &  ( (type1>2) & (type1<7) 
-        &  (type2<=1) )  )  ## fix this, weird
+    single_core = ( (pre_sn_mask==1) & (rlof_primary==1) & (CE_pre_SN_RLOF_mask==1) & 
+                     (((type1>2) & (type1<7)) | ((type1>7) & (type1<10)) ) & ( (type2<=1) | (type2==7))  )  ## fix this, weird
     
     single_core_seeds = rlof_seeds[single_core]
     single_core_mask = in1d(sys_seeds, single_core_seeds)
     mask_dict['single_core'] = single_core_mask
 
     # Double Core CEE
-    double_core = ( (pre_sn_mask==1) & (rlof_primary==1) & (CE_pre_SN_RLOF_mask==1) & ( (type1>2) & (type1<7) ) & ( (type2>2) & (type2<7) ) )
+    double_core = ( (pre_sn_mask==1) & (rlof_primary==1) & (CE_pre_SN_RLOF_mask==1) & 
+                     ( ((type1>2) & (type1<7)) | ((type1>7) & (type1<10)) ) & ( ((type2>2) & (type2<7)) | ((type2>7) & (type2<10)) ))
     double_core_seeds = rlof_seeds[double_core]
     double_core_mask = in1d(sys_seeds, double_core_seeds)
     mask_dict['double_core'] = double_core_mask

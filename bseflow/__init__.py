@@ -3,7 +3,7 @@ from .formation_channels import identify_formation_channels
 
 from .plotting.sankey import plot_sankey
 from .plotting.bootstrap import bootstrapped_2d_kde, bootstrapped_ecdf, bootstrapped_kde
-from .plotting.plotting_code import survival_plot, factors_plot, plot_model_rates
+from .plotting.plotting_code import factors_plot, plot_model_rates
 
 from .data_dicts import model_variations
 

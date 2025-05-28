@@ -79,37 +79,6 @@ def drake_table(df, factors):
 
     return df
 
-# def survival_plot(df, title, labels, save_path=None, log=False):
-
-#     fig, ax = plt.subplots(1,1, figsize=(10,6))
-#     for i, df in enumerate(df):
-#         for substring in trash_substrings:
-#             indices_to_remove = [index for index in df.index if substring in index]
-#             df = df.drop(indices_to_remove)
-
-#         index_labels = [index.replace('_', ' to ') for index in df.index]
-
-#         ax.plot(index_labels, df.iloc[:, 0], drawstyle='steps-post', color=colors[i], linewidth=3, label=f'{labels[i]}', alpha=1)
-  
-#     # ax = layoutAxes(ax, nameX='Critical Events', nameY='Survival Rate', setMinor=False, labelpad=10, fontsize=12, labelSizeMajor=18)  
-
-#     ax.set_xlabel('Critical Events', fontsize=16, fontweight='bold')
-#     # plt.ylabel("Survival Rate")
-#     ax.set_title(f'{title}', fontsize=20)
-#     ax.grid(True)
-#     legend = ax.legend(loc='upper center', bbox_to_anchor=(0.5, -.2), fancybox=True, ncol=len(labels), fontsize=15)
-
-#     for text in legend.get_texts():
-#         text.set_fontweight('bold')
-
-#     if log:
-#         ax.set_yscale('log')
-#         ax.grid(False)
-
-#     if save_path:
-#         fig.save_fig(f'{save_path}')
-#     plt.show()
-
 
 def factors_plot(ax, df, fc_color, x_label=None, y_label=None, title=None, fontsize=14, legend=False, MT2=True, mt1='MT1', mt2='MT2',
                  other_MT_1='MT1 Other', other_MT_2='MT2 Other'):

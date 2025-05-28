@@ -1,8 +1,5 @@
-import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-import matplotlib.pyplot as plt
-import plotly.offline as pyo
 
 
 def drake_table(df, factors):
@@ -63,44 +60,44 @@ def sankey_data_transform(df, CEE=False, formation_channel=False, custom_path=No
     df = df[~df.index.str.contains("Survive")].copy()
 
     node_mapping = {
-    "ZAMS" : "0",
-    "StellarMergerBeforeMT" : "1",
-    "WDBeforeMT" : "2",
-    "MT1" : "3",
-    "StellarMerger1" : "1",
-    "WD1": "5",
-    "SN1" : "6",
-    "Disbound1" : "7",
-    "MT2" : "8",
-    "StellarMerger2": "1",
-    "WD2": "10",
-    "SN2" : "11",
-    "Disbound2" : "7",
-    "DCO" : "13",
-    "Merges" : "14",
-    "NoMerger" : "15"
-    }
+        "ZAMS" : "0",
+        "StellarMergerBeforeMT" : "1",
+        "WDBeforeMT" : "2",
+        "MT1" : "3",
+        "StellarMerger1" : "1",
+        "WD1": "5",
+        "SN1" : "6",
+        "Disbound1" : "7",
+        "MT2" : "8",
+        "StellarMerger2": "1",
+        "WD2": "10",
+        "SN2" : "11",
+        "Disbound2" : "7",
+        "DCO" : "13",
+        "Merges" : "14",
+        "NoMerger" : "15"
+        }
 
     CE_node_mapping = {
-    "ZAMS" : "0",
-    "StellarMergerBeforeMT" : "1",
-    "WDBeforeMT" : "2",
-    "CE1" : "3",
-    "SMT1" : "4",
-    "StellarMerger1" : "1",
-    "WD1": "6",
-    "SN1" : "7",
-    "Disbound1" : "8",
-    "CE2" : "9",
-    "SMT2" : "10",
-    "StellarMerger2": "1",
-    "WD2": "12",
-    "SN2" : "13",
-    "Disbound2" : "8",
-    "DCO" : "15",
-    "Merges" : "16",
-    "NoMerger" : "17"
-    }
+        "ZAMS" : "0",
+        "StellarMergerBeforeMT" : "1",
+        "WDBeforeMT" : "2",
+        "CE1" : "3",
+        "SMT1" : "4",
+        "StellarMerger1" : "1",
+        "WD1": "6",
+        "SN1" : "7",
+        "Disbound1" : "8",
+        "CE2" : "9",
+        "SMT2" : "10",
+        "StellarMerger2": "1",
+        "WD2": "12",
+        "SN2" : "13",
+        "Disbound2" : "8",
+        "DCO" : "15",
+        "Merges" : "16",
+        "NoMerger" : "17"
+        }
 
     fc_node_mapping = {
         "MT1": "0",
@@ -174,19 +171,6 @@ def sankey_data_transform(df, CEE=False, formation_channel=False, custom_path=No
          df.loc[df.index.str.contains("other"), 'color'] = "rgba(220, 85, 0, 0.4)"
     df['values'] = df[df.columns[0]] * 100
 
-        # df['rates'] = df['rates']/(df['rates'][0].value())
-        # df.loc[df.index.str.contains("MT1_SN1"), 'target'] = "6"
-        # df.loc[df.index.str.contains("SN1_Disbound1"), 'source'] = "6"
-        # df.loc[df.index.str.contains("SN1_Disbound1"), 'target'] = "7"
-        # df.loc[df.index.str.contains("SN1_MT2"), 'source'] = "6"
-        # df.loc[df.index.str.contains("SN1_MT2"), 'target'] = "8"
-        # df.loc[df.index.str.contains("MT2_StellarMerger2"), 'source'] = "8"
-        # df.loc[df.index.str.contains("MT2_StellarMerger2"), 'target'] = "9"
-        # df.loc[df.index.str.contains("MT2_SN2"), 'source'] = "9"
-        # df.loc[df.index.str.contains("MT2_SN2"), 'target'] = "10"
-        # df.loc[df.index.str.contains("SN1_SN2other"), 'source'] = "6"
-        # df.loc[df.index.str.contains("SN1_SN2other"), 'target'] = "15"
-
     df = df.iloc[4: , :]
 
     if formation_channel:
@@ -199,23 +183,23 @@ def sankey_data_transform(df, CEE=False, formation_channel=False, custom_path=No
 def plot_sankey(df, title="", CEE=False, formation_channel=False, save_path=None, custom_path_labels=None, custom_trash=None):
 
     node_mapping = {
-    "ZAMS" : "0",
-    "StellarMergerBeforeMT" : "1",
-    "WDBeforeMT" : "2",
-    "MT1" : "3",
-    "StellarMerger1" : "1",
-    "WD1": "5",
-    "SN1" : "6",
-    "Disbound1" : "7",
-    "MT2" : "8",
-    "StellarMerger2": "1",
-    "WD2": "10",
-    "SN2" : "11",
-    "Disbound2" : "7",
-    "DCO" : "13",
-    "Merges" : "14",
-    "NoMerger" : "15"
-    }
+        "ZAMS" : "0",
+        "StellarMergerBeforeMT" : "1",
+        "WDBeforeMT" : "2",
+        "MT1" : "3",
+        "StellarMerger1" : "1",
+        "WD1": "5",
+        "SN1" : "6",
+        "Disbound1" : "7",
+        "MT2" : "8",
+        "StellarMerger2": "1",
+        "WD2": "10",
+        "SN2" : "11",
+        "Disbound2" : "7",
+        "DCO" : "13",
+        "Merges" : "14",
+        "NoMerger" : "15"
+        }
     
     CE_node_mapping = {
         "ZAMS" : "0",
@@ -310,11 +294,9 @@ def plot_sankey(df, title="", CEE=False, formation_channel=False, save_path=None
 
         fc_node_mapping_int = {k: int(v) for k, v in fc_node_mapping.items()}
 
-        # Max index
         max_index = max(fc_node_mapping_int.values())
         labels = [""] * (max_index + 1)
 
-        # Fill in correct label at correct index
         for phase, idx in fc_node_mapping_int.items():
             label_text = fc_better_labels.get(phase, phase)
             label_text = label_text.replace(r'$< t_H$', '<t<sub>H</sub>').replace(r'$> t_H$', '>t<sub>H</sub>')
@@ -333,12 +315,10 @@ def plot_sankey(df, title="", CEE=False, formation_channel=False, save_path=None
                        "rgba(19, 121, 32, 0.73)",
                        "rgba(220, 85, 0, 0.4)",
                        "rgba(220, 85, 0, 0.4)",
-                       "rgba(115, 115, 115, 0.4)",
+                       "rgba(19, 121, 32, 0.73)",
                        "rgba(19, 121, 32, 0.73)",
                        "rgba(19, 121, 32, 0.73)",
                        "rgba(115, 115, 115, 0.4)",]
-        # node_colors = ["rgba(19, 121, 32, 0.73)" if label not in trash else "rgba(220, 85, 0, 0.4)" if any(map(value.__contains__, "other"))
-        #        else "rgba(115, 115, 115, 0.4)" for label in labels]
 
     elif CEE:
         node_colors = ["rgba(19, 121, 32, 0.73)" if value not in trash

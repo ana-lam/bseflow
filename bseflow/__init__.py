@@ -15,7 +15,6 @@ __all__ = [
     "bootstrapped_2d_kde",
     "bootstrapped_ecdf",
     "bootstrapped_kde",
-    "survival_plot",
     "factors_plot",
     "plot_model_rates",
     "model_variations"

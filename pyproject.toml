@@ -15,7 +15,8 @@ dependencies = [
   "numba",
   "plotly",
   "h5py",
-  "tqdm"
+  "tqdm",
+  "pyyaml>=6.0.3",
 ]
 
 [project.optional-dependencies]
@@ -32,3 +33,6 @@ where = ["."]
 
 [tool.setuptools.package-data]
 "bseflow.data_dicts" = ["*.json"]
+
+[tool.setuptools.data-files]
+"." = ["bseflow.yaml"]

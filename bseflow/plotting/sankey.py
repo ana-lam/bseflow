@@ -1,5 +1,7 @@
+import os
 import pandas as pd
 import plotly.graph_objects as go
+from bseflow.config import get_sankey_dir
 
 
 def drake_table(df, factors):
@@ -180,7 +182,29 @@ def sankey_data_transform(df, CEE=False, formation_channel=False, custom_path=No
 
     return df
 
-def plot_sankey(df, title="", CEE=False, formation_channel=False, save_path=None, custom_path_labels=None, custom_trash=None):
+def plot_sankey(df, title="", CEE=False, formation_channel=False, save_path=None, save_dir=None, custom_path_labels=None, custom_trash=None):
+    """
+    Plot a Sankey diagram from a prepared rates DataFrame.
+    
+    Parameters
+    ----------
+    df: DataFrame
+        rates Dataframe (output of prepare_sankey_df or calculate_all_rates)
+    title: str
+        Title for the plot.
+    CEE: bool
+        Whether the rates are calculated with CEE or not, which determines the node mapping and labels.
+    formation_channel: bool
+        Whether the rates are calculated for specific formation channels, which determines the node mapping and labels.
+    save_path: str
+        If provided, the path (relative to sankey_dir) to save the plot HTML file.
+    save_dir: str
+        Directory to save the plot HTML file. If not provided, uses sankey_dir from config
+    custom_path_labels: list of str
+        If provided, should be a list of 3 strings corresponding to the labels for MT1, MT2, and MT2other in the formation channel plot. If not provided, defaults to "Mass Transfer", "Mass Transfer", and "Mass Transfer".
+    custom_trash: list of str
+        If provided, should be a list of phases to trash (color in orange) in the CEE or non-CEE plot. Should be from the set of all phases in the respective node mapping. If not provided, defaults to all phases containing "StellarMerger", "WD", "Disbound", or "NoMerger".    
+    """
 
     node_mapping = {
         "ZAMS" : "0",
@@ -261,21 +285,22 @@ def plot_sankey(df, title="", CEE=False, formation_channel=False, save_path=None
         "NoMerger" : r'Merges $> t_H$'
         }
     
-    fc_better_labels = {
-        "MT1": f"{custom_path_labels[0]}",
-        "SN1" : "Supernova",
-        "StellarMerger1" : "Stellar Merger",
-        "Disbound1" : "Unbound",
-        "MT2" : f"{custom_path_labels[1]}",
-        "MT2other" : f"{custom_path_labels[2]}",
-        "SN2other" : "Supernova",
-        "StellarMerger2" : "Stellar Merger",
-        "SN2": "Supernova",
-        "Disbound2": "Unbound",
-        "DCO" : "DCO Formation",
-        "Merges" : r'Merges $< t_H$',
-        "NoMerger" : r'Merges $> t_H$'
-        }
+    if custom_path_labels is not None:
+        fc_better_labels = {
+            "MT1": f"{custom_path_labels[0]}",
+            "SN1" : "Supernova",
+            "StellarMerger1" : "Stellar Merger",
+            "Disbound1" : "Unbound",
+            "MT2" : f"{custom_path_labels[1]}",
+            "MT2other" : f"{custom_path_labels[2]}",
+            "SN2other" : "Supernova",
+            "StellarMerger2" : "Stellar Merger",
+            "SN2": "Supernova",
+            "Disbound2": "Unbound",
+            "DCO" : "DCO Formation",
+            "Merges" : r'Merges $< t_H$',
+            "NoMerger" : r'Merges $> t_H$'
+            }
 
     trash_substrings = ['StellarMerger', 'WD', 'Disbound', 'NoMerger']
     if formation_channel:
@@ -350,10 +375,17 @@ def plot_sankey(df, title="", CEE=False, formation_channel=False, save_path=None
         hovertemplate='%{source.label} to %{target.label}: %{value}%<extra></extra>'
     ))])
 
-    fig.show()
+    # fig.show()
 
     fig.update_layout(title_text=f'{title}', font=dict(size=20))
+
+    if save_dir is None:
+        save_dir = get_sankey_dir()
+    os.makedirs(save_dir, exist_ok=True)
+
     if save_path:
-        fig.write_html(f'/mnt/home/alam1/bseflow/sankey_htmls/{save_path}')
+        out_path = os.path.join(save_dir, save_path)
     else:
-        fig.write_html(f'/mnt/home/alam1/bseflow/sankey_htmls/{df.columns[0].split("_")[0]}.html')
+        out_path = os.path.join(save_dir, f"{df.columns[0].split('_')[0]}.html")
+
+    fig.write_html(out_path)

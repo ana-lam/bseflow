@@ -9,7 +9,7 @@ import time
 import logging
 
 class MirroredKDE(gaussian_kde):
-    """ KDE class that mirrors data at boundaries to account for bounded support """
+    """KDE class that mirrors data at boundaries to account for bounded support"""
 
     def __init__(self, data, weights=None, lower_bounds=None, upper_bounds=None,
                  bw_method=None, bw_adjust=None):

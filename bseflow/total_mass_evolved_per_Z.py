@@ -1,6 +1,8 @@
 import numpy as np 
 import h5py as h5 #for reading in data
 
+from bseflow.config import get_group, get_field
+
 def threePartBrokenPowerLaw(x, x1=0.01, x2=0.08, x3=0.5, x4=200, a1=-0.3, \
                             a2=-1.3, a3=-2.3, C1=1):
     #Not that everything outside the range x1<x4 is set to zero
@@ -148,10 +150,10 @@ def retrieveMassEvolvedPerZ(path):
     #This is too fast, no time to walk away and grab coffee ;p
     # path = os.path.join(path, 'COMPASOutput.h5') #path+'COMPASOutput.h5'
     f = h5.File(path, 'r') # open in read-
-    allSystems = f['systems']
-    metals = (allSystems['Metallicity1'])[...]
-    m1s = (allSystems['mass1'])[...]
-    m2s = (allSystems['mass2'])[...]
+    allSystems = f[get_group('systems')]
+    metals = allSystems[get_field('Metallicity1')][...]
+    m1s = (allSystems[get_field('mass1')])[...]
+    m2s = (allSystems[get_field('mass2')])[...]
     total = []
     for Z in np.unique(metals):
         mask = metals == Z
@@ -164,11 +166,11 @@ def retrieveNbinariesEvolvedPerZ(path):  # /floor added this function to replace
 
     # path = os.path.join(path, 'COMPASOutput.h5') #path+'COMPASOutput.h5'
     f = h5.File(path, 'r') # open in read-only
-    allSystems = f['systems']
-    metals = (allSystems['Metallicity1'])[...]
+    allSystems = f[get_group('systems')]
+    metals = allSystems[get_field('Metallicity1')][...]
 
 
-    m1s = (allSystems['mass1'])[...] # /floor
+    m1s    = allSystems[get_field('mass1')][...] # /floor
     total = []
     for Z in np.unique(metals):
         mask = metals == Z
@@ -180,10 +182,14 @@ def retrieveNbinariesEvolvedPerZ(path):  # /floor added this function to replace
 def retrieveBoolWeightedSimulation(path): # //floor 
     """returns True if the simulation used weighted samples (not one) """
     # path = os.path.join(path, 'COMPASOutput.h5') #path+'COMPASOutput.h5'
+    weight_field = get_field("weight")
+    if weight_field is None:
+        return False
+
     f = h5.File(path, 'r') # open in read-only
-    allSystems = f['systems']
-    metals = (allSystems['Metallicity1'])[...]
-    weights = allSystems['weight'][...].squeeze()
+    allSystems = f[get_group("systems")]
+    metals = allSystems[get_field('Metallicity1')][...]
+    weights = allSystems[weight_field][...].squeeze()
 
     
     for Z in [np.unique(metals)[0]]:

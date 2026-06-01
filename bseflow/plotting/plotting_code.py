@@ -179,7 +179,6 @@ def plot_model_rates(rates, ax, ax2=None, MT2=True, log=False, fs=fs, x_top_labe
 
     # load in model labels & factor labels formatting
     variations = model_variations
-    drake_factors = drake_factors
 
     # store disparity from fiducial value for ax2
     disparities = []

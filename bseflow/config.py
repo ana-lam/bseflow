@@ -91,7 +91,15 @@ def get_config(reload=False):
         return _cached_config
 
     config_path = Path.cwd() / "bseflow.yaml"
+
     if config_path.exists():
+        try:
+            import yaml
+        except ImportError:
+            raise ImportError(
+                "PyYAML is required to load bseflow.yaml. "
+                "Install it with:  pip install pyyaml"
+            )
         try:
             with open(config_path) as f:
                 data = yaml.safe_load(f)
@@ -99,10 +107,22 @@ def get_config(reload=False):
                 _cached_config = data
                 return _cached_config
             else:
-                warnings.warn(f"bseflow.yaml exists but is not a valid dictionary. Using defaults.")
+                warnings.warn("bseflow.yaml exists but is not a valid dictionary. Falling back to defaults.")
         except Exception as e:
-            warnings.warn("bseflow: could not parse bseflow.yaml: {} — using defaults.".format(e))
-    
+            warnings.warn("bseflow: could not parse bseflow.yaml: {} — falling back to defaults.".format(e))
+
+    # no bseflow.yaml in cwd — fall back to the bundled template
+    import importlib.resources as pkg_resources
+    try:
+        import yaml
+        with pkg_resources.open_text("bseflow", "default_config.yaml") as f:
+            data = yaml.safe_load(f)
+        if isinstance(data, dict):
+            _cached_config = data
+            return _cached_config
+    except Exception as e:
+        warnings.warn("bseflow: could not load bundled default_config.yaml: {} — using hardcoded defaults.".format(e))
+
     _cached_config = _DEFAULTS
     return _cached_config
 

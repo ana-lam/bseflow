@@ -16,8 +16,11 @@ dependencies = [
   "plotly",
   "h5py",
   "tqdm",
-  "pyyaml>=6.0.3",
+  "pyyaml>=6.0",
 ]
+
+[project.scripts]
+bseflow = "bseflow.cli:init"
 
 [project.optional-dependencies]
 dev = [
@@ -32,7 +35,5 @@ build-backend = "setuptools.build_meta"
 where = ["."]
 
 [tool.setuptools.package-data]
+"bseflow" = ["default_config.yaml"]
 "bseflow.data_dicts" = ["*.json"]
-
-[tool.setuptools.data-files]
-"." = ["bseflow.yaml"]

@@ -9,7 +9,7 @@ def _resolve_dirs(output_dir=None, write_seeds=False):
     Return (rates_dir, seeds_subdir) based on config and arguments.
     """
     rates_dir = output_dir if output_dir is not None else get_rates_dir()
-    seeds_subdir = os.path.join(rates_dir, os.path.basename(get_seeds_subdir())) if write_seeds else None
+    seeds_subdir = os.path.join(rates_dir, os.path.basename(get_seeds_subdir())) if output_dir is not None and write_seeds else get_seeds_subdir() if write_seeds else None
 
     os.makedirs(rates_dir, exist_ok=True)
     if write_seeds:
@@ -18,7 +18,7 @@ def _resolve_dirs(output_dir=None, write_seeds=False):
     return rates_dir, seeds_subdir
 
 
-def output_results(file, output_dir=None, save_path=None, CEE=False, Z=None, Z_max=None, m_min=None, m_max=None,
+def output_results(file, save_path, output_dir=None, CEE=False, Z=None, Z_max=None, m_min=None, m_max=None,
                    MT1mask=None, MT2mask=None, prop_filter=None, selected_seeds=None, write_seeds=None,
                    optimistic_CE=False, include_wds=False):
     """

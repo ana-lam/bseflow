@@ -1,0 +1,87 @@
+# path resolution
+
+# ---- Output directories ----
+output: 
+  # Root directory for CSV rate files written by output_rates.py
+  rates_dir: "rates_output"
+
+  # Subdirectory (inside rates_dir) for per-formation-channel seed HDF5 files (mostly for debugging)
+  seeds_subdir: "fc_stage_seeds"
+
+  # Directory for Sankey HTML files written by plot_sankey()
+  sankey_dir: "sankey_htmls"
+
+# ---- Plotting options ----
+plotting:
+  usetex: true
+  fontsize: 20
+
+# ---- COMPAS HDF5 headers/fields ----
+# bseflow was developed with specific COMPAS outputs with different headers/field names
+# Maps bseflow's expected field names to the actual field names in the new COMPAS HDF5 files
+
+compas_fields:
+  groups:
+    systems: "BSE_System_Parameters"
+    formationChannels: "BSE_System_Parameters"
+    commonEnvelopes: "BSE_Common_Envelopes"
+    RLOF: "BSE_RLOF"
+    supernovae: "BSE_Supernovae"
+    doubleCompactObjects: "BSE_Double_Compact_Objects"
+
+  fields:
+    # BSE System Parameters
+    stellar_merger: "Stellar_Merger"
+    disbound: "Unbound"
+    weight: null # not present in runs without STROOPWAFEL/adaptive importance sampling, default to weight=1
+    Metallicity1: "Metallicity@ZAMS(1)"
+    mass1: "Mass@ZAMS(1)"
+    mass2: "Mass@ZAMS(2)"
+    # additional from formationchannels
+    stellar_type_K1: "Stellar_Type(1)"
+    stellar_type_K2: "Stellar_Type(2)"
+
+    # BSE Common Envelopes
+    stellarType1: "Stellar_Type(1)<CE"
+    stellarType2: "Stellar_Type(2)<CE"
+    stellarMerger: "Merger"
+    finalStellarType1: "Stellar_Type(1)"
+    finalStellarType2: "Stellar_Type(2)"
+    optimisticCommonEnvelopeFlag: "Optimistic_CE"
+
+    # BSE RLOF
+    radius1: "Radius(1)<MT"
+    radius2: "Radius(2)<MT"
+    flagCEE: "CEE>MT"
+    type1: "Stellar_Type(1)>MT"
+    type2: "Stellar_Type(2)>MT"
+    type1Prev: "Stellar_Type(1)<MT"
+    type2Prev: "Stellar_Type(2)<MT"
+    flagRLOF1: "RLOF(1)<MT"
+    flagRLOF2: "RLOF(2)<MT"
+ 
+    # BSE Supernovae
+    # old 'Survived==1' is now 'Unbound==0' in newer COMPAS outputs
+    Survived: "Unbound"
+    previousStellarTypeSN: "Stellar_Type_Prev(SN)"
+    previousStellarTypeCompanion: "Stellar_Type(CP)"
+    flagPISN: "SN_Type(SN)"
+    flagPPISN: "SN_Type(SN)"
+
+    # BSE Double Compact Objects
+    mergesInHubbleTimeFlag: "Merges_Hubble_Time"
+    M1: "Mass(1)"
+    M2: "Mass(2)"
+
+    randomSeed: "SEED"
+
+    # Integer codes for SN_Type(SN) — replaces old boolean PISN/PPISN flags
+  sn_type_codes:
+    CCSN:  1
+    ECSN:  2
+    PISN:  4
+    PPISN: 8
+    USSN:  16
+    AIC:   32
+    SNIA:  64
+    HeSD:  128

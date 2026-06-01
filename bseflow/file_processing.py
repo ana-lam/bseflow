@@ -4,8 +4,12 @@ import h5py as h5
 import multiprocessing as mp
 import os
 import re
+import warnings
+
 from bseflow.utils import in1d
 from bseflow.data_dicts import model_variations
+from bseflow.config import get_group, get_field, get_sn_type_code
+
 
 def find_particular_files(directory, filename_pattern):
     """
@@ -68,7 +72,7 @@ def multiprocess_files(files_and_fields, selected_seeds=None, return_df=False, m
     return data
 
 
-def grab_h5_data(file_path, group, return_df=False, fields = [], selected_seeds=None, preview=False):
+def grab_h5_data(file_path, internal_group, return_df=False, fields = [], selected_seeds=None, preview=False):
     """
     Reads in specific data from h5 file
     group: specific file (e.g. 'systems', 'doubleCompactObjects', 'supernovae', etc)
@@ -78,8 +82,22 @@ def grab_h5_data(file_path, group, return_df=False, fields = [], selected_seeds=
     preview: print file.keys()
     """
     
+    # translate internal group names to actual COMPAS HDF5 group names
+    try:
+        group = get_group(internal_group)
+    except KeyError:
+        # group not in config mapping - pass through as-is but warn user
+        warnings.warn(f"Group '{internal_group}' not found in config mapping. Attempting to read group with this name directly from the HDF5 file.")
+        group = internal_group
+
     # read h5py file
     with h5.File(file_path, 'r') as file:
+        if group not in file:
+            raise KeyError(
+                "Group '{}' (mapped from '{}') not found in {}. "
+                "Check compas_fields.groups in bseflow.yaml.".format(group, internal_group, file_path)
+            )
+ 
         group_file = file[group]
 
         if preview:
@@ -103,22 +121,61 @@ def grab_h5_data(file_path, group, return_df=False, fields = [], selected_seeds=
             raise Exception("No seed field found in this HDF5 file.")
             
         # create columns/arrays for the specified fields
-        for field in fields:
-            if field in fields:
-                field_data = group_file[field][...].squeeze()
-                if return_df:
-                    data[field] = field_data
+        # translate internal field names to actual COMPAS HDF5 field names
+        sn_type_cache = None
+
+        for internal_field in fields:
+            try:
+                actual_field = get_field(internal_field)
+            except KeyError:
+                # field not in config mapping - pass through as-is but warn user
+                warnings.warn(f"Field '{internal_field}' not found in config mapping. Attempting to read field with this name directly from the HDF5 file.")
+                actual_field = internal_field
+            
+            # special case for weights not present
+            if actual_field is None:
+                if internal_field == "weight":
+                    n = len(seeds) if not return_df else len(data)
+                    field_data = np.ones(n, dtype=float)
                 else:
-                    data.append(field_data[selected_indices] if selected_seeds is not None else field_data)
+                    raise ValueError(
+                        "Field '{}' maps to None in config but is not 'weight'. "
+                        "Check compas_fields.fields in bseflow.yaml.".format(internal_field)
+                    )
+            elif internal_field == "Survived":
+                raw = group_file[actual_field][...].squeeze()
+                if selected_seeds is not None:
+                    raw = raw[selected_indices]
+                field_data = (~raw.astype(bool)).astype(int)  # invert survived to unbound
+            elif internal_field in ('flagPISN', 'flagPPISN'):
+                if sn_type_cache is None:
+                    raw = group_file[actual_field][...].squeeze()
+                    sn_type_cache = raw[selected_indices] if selected_seeds is not None else raw
+                if internal_field == 'flagPISN':
+                    field_data = (sn_type_cache == get_sn_type_code('PISN')).astype(int)
+                elif internal_field == 'flagPPISN':
+                    field_data = (sn_type_cache == get_sn_type_code('PPISN')).astype(int)
+            # normal field handling
             else:
-                print(f"Field '{field}' not found in the HDF5 file.")
+                if actual_field not in group_file:
+                    raise KeyError(
+                        "Field '{}' (mapped from '{}') not found in group '{}' of {}. "
+                        "Check compas_fields.fields in bseflow.yaml.".format(actual_field, internal_field, group, file_path)
+                    )
+                field_data = group_file[actual_field][...].squeeze()
+                if selected_seeds is not None:
+                    field_data = field_data[selected_indices]
+        
+            if return_df:
+                data[internal_field] = field_data
+            else:
+                data.append(field_data)
         
         # if we only want data for seeds of interest, filter
-        if return_df:
-            if selected_seeds is not None:
-                data = data[data.index.isin(selected_seeds)]
-
-    return data
+        if return_df and selected_seeds is not None:
+            data = data[data.index.isin(selected_seeds)]
+        
+        return data
 
 
 def sort_model_files(model_files, rates_specific=False):

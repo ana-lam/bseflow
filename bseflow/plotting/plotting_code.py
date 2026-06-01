@@ -8,41 +8,44 @@ import numpy as np
 from matplotlib.font_manager import FontProperties
 import re
 
+from bseflow.config import get_usetex, get_fontsize
+from bseflow.data_dicts import model_variations, drake_factors
 
-plt.rc('text', usetex=True)
+
+plt.rc('text', usetex=get_usetex())
 plt.rc('font', family='serif')
-fs=20
+
+fs=get_fontsize()
+
 params = {'legend.fontsize': fs,
           'axes.labelsize': fs,
           'font.weight': 'bold',
           'axes.labelweight': 'bold',
           'xtick.labelsize': 0.7*fs,
           'ytick.labelsize': 0.7*fs}
+
 plt.rcParams.update(params)
 plt.rcParams['pdf.fonttype'] = 42
 
 plt.rcParams.update({
-    'axes.edgecolor': '#545454',  # Dark gray for axes borders
-    'xtick.color': '#545454',     # Dark gray for x-tick labels
-    'ytick.color': '#545454',     # Dark gray for y-tick labels
-    'axes.labelcolor': 'black', # Dark gray for axes labels
-    'text.color': 'black',      # Dark gray for text
-    'axes.titlecolor': 'black', # Dark gray for title
-    'axes.linewidth': 1.5,        # Thicker axes borders
-    'xtick.major.width': 1.0,     # Thicker major x-ticks
-    'ytick.major.width': 1.0,     # Thicker major y-ticks
-    'xtick.minor.width': 1,     # Thicker minor x-ticks
-    'ytick.minor.width': 1      # Thicker minor y-ticks
+    'axes.edgecolor': '#545454',
+    'xtick.color': '#545454',
+    'ytick.color': '#545454',
+    'axes.labelcolor': 'black',
+    'text.color': 'black',
+    'axes.titlecolor': 'black',
+    'axes.linewidth': 1.5,
+    'xtick.major.width': 1.0,
+    'ytick.major.width': 1.0, 
+    'xtick.minor.width': 1,
+    'ytick.minor.width': 1
 })
 
 # lighten color for plotting purposes
 def lighten_color(hex_color, amount=0.8):
     rgb = mcolors.hex2color(hex_color)
-
     lightened_rgb = [(1 - amount) * channel + amount for channel in rgb]
-
     lightened_hex = mcolors.to_hex(lightened_rgb)
-    
     return lightened_hex
 
 
@@ -175,10 +178,7 @@ def factors_plot(ax, df, fc_color, x_label=None, y_label=None, title=None, fonts
 def plot_model_rates(rates, ax, ax2=None, MT2=True, log=False, fs=fs, x_top_labels=False, x_bottom_labels=False):
 
     # load in model labels & factor labels formatting
-    with open('bseFlow/data_dicts/modelVariations.json') as f:
-        variations = json.load(f)
-    with open('bseFlow/data_dicts/drakeFactors.json') as f:
-        drake_factors = json.load(f)
+    variations = model_variations
 
     # store disparity from fiducial value for ax2
     disparities = []

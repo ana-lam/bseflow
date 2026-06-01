@@ -1,6 +1,6 @@
 [project]
 name = "bseflow"
-version = "0.1.0"
+version = "0.2.0"
 description = "Binary stellar evolution tools for investigating intermediate stages"
 authors = [
   {name = "Ana Lam", email = "anakristinalam@gmail.com"}
@@ -15,8 +15,12 @@ dependencies = [
   "numba",
   "plotly",
   "h5py",
-  "tqdm"
+  "tqdm",
+  "pyyaml>=6.0",
 ]
+
+[project.scripts]
+bseflow = "bseflow.cli:init"
 
 [project.optional-dependencies]
 dev = [
@@ -31,4 +35,5 @@ build-backend = "setuptools.build_meta"
 where = ["."]
 
 [tool.setuptools.package-data]
+"bseflow" = ["default_config.yaml"]
 "bseflow.data_dicts" = ["*.json"]

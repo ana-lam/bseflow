@@ -2,10 +2,66 @@ import argparse
 import os
 from bseflow.calculate_rates import BSESimulation
 from bseflow.file_processing import create_h5_file
+from bseflow.config import get_rates_dir, get_seeds_subdir
 
-def output_results(file, output_dir, save_path, CEE=False, Z=None, Z_max=None, m_min=None, m_max=None,
+def _resolve_dirs(output_dir=None, write_seeds=False):
+    """
+    Return (rates_dir, seeds_subdir) based on config and arguments.
+    """
+    rates_dir = output_dir if output_dir is not None else get_rates_dir()
+    if not write_seeds:
+        seeds_subdir = None
+    elif output_dir is not None:
+        seeds_subdir = os.path.join(rates_dir, os.path.basename(get_seeds_subdir()))
+    else:
+        seeds_subdir = get_seeds_subdir()
+
+    os.makedirs(rates_dir, exist_ok=True)
+    if write_seeds:
+        os.makedirs(seeds_subdir, exist_ok=True)
+    
+    return rates_dir, seeds_subdir
+
+
+def output_results(file, save_path, output_dir=None, CEE=False, Z=None, Z_max=None, m_min=None, m_max=None,
                    MT1mask=None, MT2mask=None, prop_filter=None, selected_seeds=None, write_seeds=None,
                    optimistic_CE=False, include_wds=False):
+    """
+    Calculate rates for a COMPAS HDF5 file and write CSV (and optionally HDF5) outputs.
+
+    Parameters:
+    -----------
+    file: str
+        Path to the COMPAS HDF5 file.
+    output_dir: str, optional
+        Directory to write output files into. Defaults to bseflow.yaml value.
+    save_path: str, optional
+        Label used in output filenames.
+    CEE: bool, optional
+        Whether to calculate rates with common envelope evolution. Default False.
+    Z: float, optional
+        If specified, filter to this metallicity.
+    Z_max: float, optional
+        If specified with Z, filter to metallicity <= Z_max.
+    m_min: float, optional
+        If specified, filter to mass >= m_min.
+    m_max: float, optional  
+        If specified, filter to mass <= m_max.
+    MT1mask: str, optional
+        If specified, filter to systems with first MT matching this mask (formation channel specific).
+    MT2mask: str, optional
+        If specified, filter to systems with second MT matching this mask (formation channel specific).
+    prop_filter: list of str, optional
+        If specified, should be [group, property, min_val] or [group, property, min_val, max_val] to filter by any property.
+    selected_seeds: list of int, optional
+        If specified, only process these seeds.
+    write_seeds: str, optional
+        If specified, write seeds to an HDF5 file with this label in the filename.
+    optimistic_CE: bool, optional
+        Whether to also calculate rates with optimistic common envelope assumptions (only for certain models). Default False.
+    include_wds: bool, optional
+        Whether to include white dwarf systems in the rate calculations. Default False.
+    """
     
     print("starting rate calculation...")
 
@@ -29,53 +85,61 @@ def output_results(file, output_dir, save_path, CEE=False, Z=None, Z_max=None, m
     sim = BSESimulation(file, selected_seeds=selected_seeds, CEE=CEE, include_wds=include_wds,
                         optimistic_CE=optimistic_CE, formation_channel=MT1mask, 
                         formation_channel_2=MT2mask)
-    
-    if not os.path.isdir(f'/mnt/home/alam1/ceph/{output_dir}'):
-        os.makedirs(f'/mnt/home/alam1/ceph/{output_dir}', exist_ok=True)
-    if write_seeds and not os.path.isdir(f'/mnt/home/alam1/ceph/{output_dir}/fc_stage_seeds'):
-        os.makedirs(f'/mnt/home/alam1/ceph/{output_dir}/fc_stage_seeds', exist_ok=True)
+
+    rates_dir, seeds_subdir = _resolve_dirs(output_dir, write_seeds)
 
     rates_dict, rates_df = sim.calculate_all_rates()
 
     suffix = "_WD" if include_wds else ""
 
     print("writing csv...")
-    rates_df.to_csv(f'/mnt/home/alam1/ceph/{output_dir}/rates_{model}_{save_path}{suffix}.csv')
+    rates_df.to_csv(os.path.join(rates_dir, f"rates_{model}_{save_path}{suffix}.csv"))
     if write_seeds:
-        create_h5_file(f'/mnt/home/alam1/ceph/{output_dir}/fc_stage_seeds/{write_seeds}_{model}{suffix}.h5', rates_dict)
+        create_h5_file(
+            os.path.join(seeds_subdir, f"{write_seeds}_{model}{suffix}.h5"),
+            rates_dict,
+        )
 
-    if model =='fiducial' or model == 'unstableCaseBB':
+    if model in ('fiducial', 'unstableCaseBB'):
         print("starting rate calculation with optimistic CE...")
-        sim = BSESimulation(file, selected_seeds=selected_seeds, CEE=CEE, include_wds=include_wds,
-                optimistic_CE=True, formation_channel=MT1mask, 
-                formation_channel_2=MT2mask)
+        sim_opt = BSESimulation(file, selected_seeds=selected_seeds, CEE=CEE,
+                                include_wds=include_wds, optimistic_CE=True,
+                                formation_channel=MT1mask, formation_channel_2=MT2mask)
+        rates_dict_opt, rates_df_opt = sim_opt.calculate_all_rates()
         print("writing csv...")
         if model == 'fiducial':
-            rates_df.to_csv(f'/mnt/home/alam1/ceph/{output_dir}/rates_optimisticCE_{save_path}{suffix}.csv')
+            rates_df_opt.to_csv(
+                os.path.join(rates_dir, f"rates_optimisticCE_{save_path}{suffix}.csv"))
             if write_seeds:
-                create_h5_file(f'/mnt/home/alam1/ceph/{output_dir}/fc_stage_seeds/{write_seeds}_optimisticCE{suffix}.h5', rates_dict)
+                create_h5_file(
+                    os.path.join(seeds_subdir, f"{write_seeds}_optimisticCE{suffix}.h5"),
+                    rates_dict_opt,
+                )
         elif model == 'unstableCaseBB':
-            rates_df.to_csv(f'/mnt/home/alam1/ceph/{output_dir}/rates_unstableCaseBB_opt_{save_path}{suffix}.csv')
+            rates_df_opt.to_csv(
+                os.path.join(rates_dir, f"rates_unstableCaseBB_opt_{save_path}{suffix}.csv"))
             if write_seeds:
-                create_h5_file(f'/mnt/home/alam1/ceph/{output_dir}/fc_stage_seeds/{write_seeds}_unstableCaseBB_opt{suffix}.h5', rates_dict)
+                create_h5_file(
+                    os.path.join(seeds_subdir, f"{write_seeds}_unstableCaseBB_opt{suffix}.h5"),
+                    rates_dict_opt,
+                )
 
 def main(file, output_dir, save_path, CEE, Z, Z_max, m_min, m_max, MT1mask, MT2mask, prop_filter, 
          selected_seeds=None, write_seeds=None):
 
-    output_results(file, output_dir, save_path, CEE, Z, Z_max, m_min, m_max, MT1mask, MT2mask, 
-                   prop_filter, selected_seeds=selected_seeds, write_seeds=write_seeds)
+    output_results(file, save_path=save_path, output_dir=output_dir, CEE=CEE, Z=Z, Z_max=Z_max, 
+                   m_min=m_min, m_max=m_max, MT1mask=MT1mask, MT2mask=MT2mask, 
+                   prop_filter=prop_filter, selected_seeds=selected_seeds, write_seeds=write_seeds)
 
     print("done!")            
 
 
 if __name__ == "__main__":
 
-    print("running main")
-
-    parser = argparse.ArgumentParser(description='Process data files and output rates.')
-    parser.add_argument('file', type=str, help="File path.")
+    parser = argparse.ArgumentParser(description='Process COMPAS files and output rates.')
+    parser.add_argument('file', type=str, help="Path to the COMPAS HDF5 file.")
     parser.add_argument('--output_dir', type=str, default="bseflow", help="Output directory.")
-    parser.add_argument('--save_path', required=True, type=str, help='Path to save.')
+    parser.add_argument('--save_path', required=True, type=str, help='Label used in output filenames.')
     parser.add_argument('--CEE', action='store_true', help='Calculate rates with CEE.')
 
     # specific property ranges

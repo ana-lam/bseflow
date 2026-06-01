@@ -127,8 +127,9 @@ def output_results(file, save_path, output_dir=None, CEE=False, Z=None, Z_max=No
 def main(file, output_dir, save_path, CEE, Z, Z_max, m_min, m_max, MT1mask, MT2mask, prop_filter, 
          selected_seeds=None, write_seeds=None):
 
-    output_results(file, output_dir, save_path, CEE, Z, Z_max, m_min, m_max, MT1mask, MT2mask, 
-                   prop_filter, selected_seeds=selected_seeds, write_seeds=write_seeds)
+    output_results(file, save_path=save_path, output_dir=output_dir, CEE=CEE, Z=Z, Z_max=Z_max, 
+                   m_min=m_min, m_max=m_max, MT1mask=MT1mask, MT2mask=MT2mask, 
+                   prop_filter=prop_filter, selected_seeds=selected_seeds, write_seeds=write_seeds)
 
     print("done!")            
 

@@ -76,12 +76,12 @@ compas_fields:
     randomSeed: "SEED"
 
     # Integer codes for SN_Type(SN) — replaces old boolean PISN/PPISN flags
-  sn_type_codes:
-    CCSN:  1
-    ECSN:  2
-    PISN:  4
-    PPISN: 8
-    USSN:  16
-    AIC:   32
-    SNIA:  64
-    HeSD:  128
+    sn_type_codes:
+      CCSN:  1
+      ECSN:  2
+      PISN:  4
+      PPISN: 8
+      USSN:  16
+      AIC:   32
+      SNIA:  64
+      HeSD:  128

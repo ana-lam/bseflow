@@ -2,8 +2,14 @@ __pycache__/
 notebooks/
 *.DS_Store
 venv/
+.venv/
 *.pyc
 *.egg-info/
 dist/
 build/
 outputs/
+dist/
+rates_output/
+rates_data/
+sankey_htmls/
+EOF

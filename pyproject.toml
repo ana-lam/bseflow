@@ -1,12 +1,15 @@
 [project]
 name = "bseflow"
 version = "0.2.0"
-description = "Binary stellar evolution tools for investigating intermediate stages"
+description = "Visualize the formation pathways of gravitational-wave sources from binary population synthesis"
 authors = [
   {name = "Ana Lam", email = "anakristinalam@gmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["astrophysics", "binary-stars", "gravitational-waves", "COMPAS", "population-synthesis", "sankey", "binary-stellar-evolution"]
 dependencies = [
   "numpy",
   "matplotlib",
@@ -20,6 +23,10 @@ dependencies = [
   "nbformat>=5.10.4",
 ]
 
+[project.urls]
+Homepage = "https://github.com/ana-lam/bseflow"
+Repository = "https://github.com/ana-lam/bseflow"
+
 [project.scripts]
 bseflow = "bseflow.cli:init"
 
@@ -29,11 +36,12 @@ dev = [
 ]
 
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
+include = ["bseflow*"] 
 
 [tool.setuptools.package-data]
 "bseflow" = ["default_config.yaml"]

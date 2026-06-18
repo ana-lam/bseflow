@@ -17,6 +17,7 @@ dependencies = [
   "h5py",
   "tqdm",
   "pyyaml>=6.0",
+  "nbformat>=5.10.4",
 ]
 
 [project.scripts]

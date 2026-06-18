@@ -19,8 +19,6 @@ fs=get_fontsize()
 
 params = {'legend.fontsize': fs,
           'axes.labelsize': fs,
-          'font.weight': 'bold',
-          'axes.labelweight': 'bold',
           'xtick.labelsize': 0.7*fs,
           'ytick.labelsize': 0.7*fs}
 

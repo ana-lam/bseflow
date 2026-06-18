@@ -375,7 +375,7 @@ def plot_sankey(df, title="", CEE=False, formation_channel=False, save_path=None
         hovertemplate='%{source.label} to %{target.label}: %{value}%<extra></extra>'
     ))])
 
-    # fig.show()
+    fig.show()
 
     fig.update_layout(title_text=f'{title}', font=dict(size=20))
 

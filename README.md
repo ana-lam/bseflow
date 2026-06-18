@@ -17,7 +17,7 @@ pip install bseflow
 Or from source for development:
 
 ```bash
-git clone https://github.com/<you>/bseflow.git
+git clone https://github.com/ana-lam/bseflow.git
 cd bseflow
 pip install -e .
 ```

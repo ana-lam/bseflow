@@ -1,6 +1,6 @@
 [project]
 name = "bseflow"
-version = "0.2.0"
+version = "0.2.1"
 description = "Visualize the formation pathways of gravitational-wave sources from binary population synthesis"
 authors = [
   {name = "Ana Lam", email = "anakristinalam@gmail.com"}

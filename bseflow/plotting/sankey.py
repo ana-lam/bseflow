@@ -182,7 +182,7 @@ def sankey_data_transform(df, CEE=False, formation_channel=False, custom_path=No
 
     return df
 
-def plot_sankey(df, title="", CEE=False, formation_channel=False, save_path=None, save_dir=None, custom_path_labels=None, custom_trash=None):
+def plot_sankey(df, title="", CEE=False, formation_channel=False, save_path=None, save_dir=None, custom_path_labels=None, custom_trash=None, save=True, show=False, return_fig=False):
     """
     Plot a Sankey diagram from a prepared rates DataFrame.
     
@@ -375,17 +375,22 @@ def plot_sankey(df, title="", CEE=False, formation_channel=False, save_path=None
         hovertemplate='%{source.label} to %{target.label}: %{value}%<extra></extra>'
     ))])
 
-    fig.show()
-
     fig.update_layout(title_text=f'{title}', font=dict(size=20))
 
-    if save_dir is None:
-        save_dir = get_sankey_dir()
-    os.makedirs(save_dir, exist_ok=True)
+    if show:
+        fig.show()
 
-    if save_path:
-        out_path = os.path.join(save_dir, save_path)
-    else:
-        out_path = os.path.join(save_dir, f"{df.columns[0].split('_')[0]}.html")
+    if return_fig:
+        return fig
 
-    fig.write_html(out_path)
+    if save:
+        if save_dir is None:
+            save_dir = get_sankey_dir()
+        os.makedirs(save_dir, exist_ok=True)
+        if save_path:
+            out_path = os.path.join(save_dir, save_path)
+        else:
+            out_path = os.path.join(save_dir, f"{df.columns[0].split('_')[0]}.html")
+        fig.write_html(out_path)
+
+    return fig

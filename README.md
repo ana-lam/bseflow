@@ -101,6 +101,8 @@ The output HTML (written to your configured `sankey_dir`, default `sankey_htmls/
 
 ## What the diagram shows
 
+![Example Sankey Diagram generated with bseflow](sankey_example.png)
+
 Each node is an evolutionary stage; each flow's width is the fraction of systems taking that path. A typical isolated-binary pathway to a merging compact-object binary runs:
 
 > **ZAMS → first mass transfer → first supernova → second mass transfer (often common envelope)

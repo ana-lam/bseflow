@@ -113,7 +113,7 @@ def grab_h5_data(file_path, internal_group, return_df=False, fields = [], select
             else:
                 seeds = group_file[seed_field][...].squeeze().astype(int)
                 if selected_seeds is not None:
-                    selected_indices = np.in1d(seeds, selected_seeds)
+                    selected_indices = in1d(seeds, selected_seeds)
                     seeds = seeds[selected_indices]
                 data = [seeds]
 
@@ -155,6 +155,26 @@ def grab_h5_data(file_path, internal_group, return_df=False, fields = [], select
                     field_data = (sn_type_cache == get_sn_type_code('PISN')).astype(int)
                 elif internal_field == 'flagPPISN':
                     field_data = (sn_type_cache == get_sn_type_code('PPISN')).astype(int)
+
+            elif internal_field == "stellar_merger":
+                # for stellar mergers:
+                # derive from Evolution_Status: 12 = STELLAR_MERGER, 13 = STELLAR_MERGER_AT_BIRTH.
+                if actual_field is not None and actual_field in group_file:
+                    raw = group_file[actual_field][...].squeeze()          # old schema: real column
+                else:
+                    status_field = get_field("evolution_status")
+                    if status_field not in group_file:
+                        raise KeyError(
+                            "Neither '{}' nor Evolution_Status ('{}') found in group '{}' of {}. "
+                            "Check compas_fields.fields in bseflow.yaml.".format(
+                                actual_field, status_field, group, file_path)
+                        )
+                    status = group_file[status_field][...].squeeze()
+                    raw = np.isin(status, [12, 13]).astype(int)            # new schema: derived
+                if selected_seeds is not None:
+                    raw = raw[selected_indices]
+                field_data = raw
+
             # normal field handling
             else:
                 if actual_field not in group_file:

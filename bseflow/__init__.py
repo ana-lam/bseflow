@@ -7,7 +7,7 @@ from .plotting.plotting_code import factors_plot, plot_model_rates
 
 from .data_dicts import model_variations
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 __all__ = [
     "BSESimulation",
     "identify_formation_channels",
